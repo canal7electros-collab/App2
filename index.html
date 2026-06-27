@@ -1,0 +1,3843 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Canal 7 — Prépa & Tournage</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon192.png">
+<link rel="apple-touch-icon" href="icon192.png">
+<meta name="theme-color" content="#111111">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Canal 7">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 14px; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f0ede8;
+    color: #1a1a1a;
+    min-height: 100vh;
+  }
+
+  /* ── Layout ── */
+  .app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  .sidebar { display: none; } /* hidden — replaced by bottom-nav */
+  .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; padding-bottom: 64px; }
+
+  /* ── Bottom nav bar ── */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: 64px;
+    background: #111;
+    border-top: 1px solid #222;
+    display: flex; align-items: stretch;
+    z-index: 100;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .bottom-nav-left {
+    display: flex; align-items: center;
+    padding: 0 14px;
+    border-right: 1px solid #1e1e1e;
+    gap: 6px; flex-shrink: 0;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .bottom-nav-left:hover { background: #1a1a1a; }
+  .bottom-nav-logo { font-size: 16px; font-weight: 700; letter-spacing: -0.5px; color: #fff; line-height: 1; }
+  .bottom-nav-logo span { color: #e84040; }
+  .bottom-nav-film {
+    display: flex; align-items: center; gap: 6px;
+    padding: 0 12px;
+    border-right: 1px solid #1e1e1e;
+    flex-shrink: 0; min-width: 0; max-width: 180px;
+  }
+  .bottom-nav-film-title {
+    font-size: 12px; color: #aaa; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .film-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    flex-shrink: 0; background: #555;
+  }
+  .film-dot.green { background: #22c55e; }
+  .film-dot.amber { background: #f59e0b; }
+  .film-dot.blue  { background: #3b82f6; }
+
+  .bottom-nav-items {
+    display: flex; flex: 1; align-items: stretch;
+  }
+  .nav-item {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px; flex: 1;
+    cursor: pointer; font-size: 10px; color: #555;
+    border: none; background: transparent;
+    transition: all 0.15s;
+    padding: 0 4px;
+    text-align: center;
+    letter-spacing: 0.3px;
+    font-weight: 500;
+  }
+  .nav-item:hover { color: #aaa; background: #1a1a1a; }
+  .nav-item.active { color: #e84040; }
+  .nav-item svg { flex-shrink: 0; opacity: 0.6; }
+  .nav-item.active svg { opacity: 1; }
+  .nav-item span { display: block; }
+
+  /* Legacy sidebar aliases (unused but keep for JS compat) */
+  .sidebar-header { display: none; }
+  .logo { display: none; }
+  .logo span { color: #e84040; }
+  .logo-sub { display: none; }
+  .sidebar-section { display: none; }
+  .sidebar-label { display: none; }
+  .film-item { display: none; }
+  .add-btn-sidebar { display: none; }
+  .sidebar-divider { display: none; }
+
+  /* ── Top bar ── */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 24px;
+    background: #f0ede8;
+    border-bottom: 1px solid #ddd9d2;
+    position: sticky; top: 0; z-index: 10;
+    flex-shrink: 0;
+  }
+  .topbar-title { font-size: 18px; font-weight: 600; }
+  .topbar-sub { font-size: 12px; color: #999; margin-top: 2px; }
+  .btn-row { display: flex; gap: 8px; align-items: center; }
+
+  /* ── Buttons ── */
+  .btn {
+    padding: 8px 16px; border-radius: 8px; font-size: 13px;
+    font-weight: 500; cursor: pointer; border: none; transition: all 0.15s;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-primary { background: #e84040; color: #fff; }
+  .btn-primary:hover { background: #c93535; }
+  .btn-ghost { background: transparent; color: #555; border: 1px solid #ccc; }
+  .btn-ghost:hover { background: #e8e5e0; }
+  .btn-dark { background: #111; color: #fff; }
+  .btn-dark:hover { background: #333; }
+  .btn-danger { background: #fee2e2; color: #b91c1c; border: none; }
+  .btn-danger:hover { background: #fecaca; }
+
+  /* ── Stats ── */
+  .stats-bar { display: flex; gap: 12px; padding: 16px 24px 0; flex-shrink: 0; }
+  .stat-card {
+    background: #fff; border: 1px solid #ddd9d2;
+    border-radius: 10px; padding: 12px 16px; flex: 1;
+  }
+  .stat-val { font-size: 24px; font-weight: 700; }
+  .stat-val.red { color: #e84040; }
+  .stat-label { font-size: 10px; color: #aaa; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 2px; padding: 16px 24px 0; flex-shrink: 0; }
+  .tab {
+    padding: 8px 16px; border-radius: 8px 8px 0 0;
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    color: #999; border: 1px solid transparent; border-bottom: none;
+    transition: all 0.15s; background: transparent;
+  }
+  .tab.active { background: #fff; color: #1a1a1a; border-color: #ddd9d2; }
+  .tab:hover:not(.active) { color: #555; }
+
+  /* ── Content ── */
+  .content { padding: 0 24px 32px; flex: 1; }
+  .panel {
+    background: #fff; border: 1px solid #ddd9d2;
+    border-radius: 0 12px 12px 12px; padding: 4px 0;
+    overflow: hidden;
+  }
+  .panel-flat { background: #fff; border: 1px solid #ddd9d2; border-radius: 12px; padding: 4px 0; overflow: hidden; margin-top: 20px; }
+
+  /* ── Tables ── */
+  .tbl { width: 100%; border-collapse: collapse; }
+  .tbl th {
+    text-align: left; padding: 10px 14px;
+    font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: 0.6px;
+    font-weight: 500; border-bottom: 1px solid #f0ede8;
+  }
+  .tbl td { padding: 12px 14px; font-size: 13px; border-bottom: 1px solid #f7f5f2; vertical-align: middle; }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl tbody tr:hover { background: #faf9f7; }
+  .tbl .qty { font-weight: 700; color: #e84040; white-space: nowrap; }
+  .tbl .sub { font-size: 11px; color: #bbb; display: block; margin-top: 1px; }
+  .tbl .date-cell { font-size: 12px; color: #777; white-space: nowrap; }
+
+  .badge {
+    display: inline-flex; align-items: center;
+    padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 500;
+  }
+  .badge-gray  { background: #f0ede8; color: #777; }
+  .badge-amber { background: #fef3c7; color: #92400e; }
+  .badge-green { background: #dcfce7; color: #166534; }
+  .badge-red   { background: #fee2e2; color: #b91c1c; }
+
+  .icon-btn {
+    width: 30px; height: 30px; border-radius: 6px;
+    border: none; background: transparent; color: #ccc;
+    cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .icon-btn:hover { background: #fee2e2; color: #e84040; }
+
+  /* ── Calendar ── */
+  .cal-wrap { overflow-x: auto; padding: 4px 0; }
+  .cal-grid { display: grid; min-width: 640px; font-size: 11px; gap: 0; }
+  .cal-row { display: contents; }
+  .cal-head-cell {
+    padding: 8px 4px; text-align: center; font-size: 10px;
+    color: #bbb; font-weight: 500; border-bottom: 1px solid #f0ede8;
+  }
+  .cal-head-cell.weekend { color: #ddd; }
+  .cal-head-cell.today { color: #e84040; font-weight: 700; }
+  .cal-label-cell {
+    padding: 8px 14px; font-size: 12px; color: #555;
+    border-right: 1px solid #f0ede8; border-bottom: 1px solid #f7f5f2;
+    white-space: nowrap; display: flex; align-items: center;
+  }
+  .cal-cell {
+    height: 34px; border-bottom: 1px solid #f7f5f2;
+    border-right: 1px solid #f7f5f2; background: #faf9f7;
+    transition: background 0.1s;
+  }
+  .cal-cell.on { background: #e84040; border-color: #c93535; }
+  .cal-cell.weekend-col { background: #f5f3f0; }
+  .cal-cell.weekend-col.on { background: #f87171; }
+
+
+
+  /* ── Modal ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: #fff; border-radius: 16px; padding: 26px;
+    width: 500px; max-width: 95vw; max-height: 90vh; overflow-y: auto;
+    transform: translateY(12px); transition: transform 0.2s;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 22px; }
+
+  /* ── Forms ── */
+  .form-group { margin-bottom: 14px; }
+  .form-label { display: block; font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+  .form-input {
+    width: 100%; padding: 9px 12px; border: 1px solid #e0ddd8;
+    border-radius: 8px; font-size: max(16px, 13px); color: #1a1a1a;
+    transition: border-color 0.15s; background: #faf9f7;
+  }
+  .form-input:focus { outline: none; border-color: #e84040; background: #fff; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-sep { height: 1px; background: #f0ede8; margin: 16px 0; }
+  .form-section-title { font-size: 11px; font-weight: 600; color: #bbb; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px; }
+
+  /* ── Empty state ── */
+  .empty { text-align: center; padding: 48px 24px; color: #ccc; }
+  .empty svg { margin-bottom: 12px; opacity: 0.4; }
+  .empty p { font-size: 14px; margin-bottom: 16px; color: #bbb; }
+
+  /* ── Confirm dialog ── */
+  .confirm-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.15s;
+  }
+  .confirm-overlay.open { opacity: 1; pointer-events: all; }
+  .confirm-box {
+    background: #fff; border-radius: 14px; padding: 24px;
+    width: 340px; max-width: 95vw; text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  }
+  .confirm-box p { font-size: 14px; color: #555; margin: 8px 0 20px; }
+  .confirm-box h3 { font-size: 16px; font-weight: 700; }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #111; color: #fff; padding: 10px 20px; border-radius: 10px;
+    font-size: 13px; font-weight: 500; opacity: 0; transition: all 0.3s;
+    z-index: 400; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── Responsive ── */
+  @media (max-width: 680px) {
+    .stats-bar { flex-wrap: wrap; }
+    .stat-card { min-width: calc(50% - 6px); }
+    .bottom-nav-film { max-width: 120px; }
+  }
+  @media (max-width: 400px) {
+    .bottom-nav-film { display: none; }
+    .nav-item { font-size: 9px; }
+  }
+
+  .hidden { display: none !important; }
+  select.form-input { appearance: none; cursor: pointer; }
+  /* ── Home page ── */
+  .home-screen {
+    position: fixed; inset: 0; background: #111;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 1000; padding: 24px;
+  }
+  .home-screen.hidden { display: none !important; }
+  .home-logo { font-size: 48px; font-weight: 700; letter-spacing: -2px; color: #fff; margin-bottom: 4px; }
+  .home-logo span { color: #e84040; }
+  .home-sub { font-size: 13px; color: #555; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 56px; }
+  .home-films-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px; width: 100%; max-width: 780px; margin-bottom: 24px;
+  }
+  .home-film-card {
+    background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px;
+    padding: 18px 20px; cursor: pointer; transition: all 0.15s;
+    border-top: 3px solid #333; text-align: left; position: relative;
+  }
+  .home-film-card:hover { background: #222; border-color: #444; transform: translateY(-2px); }
+  .home-film-card .hfc-title { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 24px; }
+  .home-film-card .hfc-meta { font-size: 11px; color: #555; line-height: 1.6; }
+  .hfc-delete {
+    position: absolute; top: 10px; right: 10px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: transparent; border: none; color: #555;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.15s; font-size: 16px; line-height: 1;
+    opacity: 0;
+  }
+  .hfc-edit {
+    position: absolute; top: 10px; right: 36px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: transparent; border: none; color: #555;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.15s; font-size: 15px; line-height: 1;
+    opacity: 0;
+  }
+  .home-film-card:hover .hfc-delete { opacity: 1; }
+  .home-film-card:hover .hfc-edit { opacity: 1; }
+  .hfc-delete:hover { background: #e84040 !important; color: #fff !important; }
+  .hfc-edit:hover { background: #333 !important; color: #fff !important; }
+  .home-film-card .hfc-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: middle; }
+  .home-new-card {
+    background: transparent; border: 1px dashed #2a2a2a; border-radius: 12px;
+    padding: 18px 20px; cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; gap: 10px; color: #444; font-size: 14px;
+  }
+  .home-new-card:hover { border-color: #e84040; color: #e84040; }
+  .home-footer { font-size: 11px; color: #333; margin-top: 32px; }
+  .home-archive-folder { width: 100%; max-width: 780px; margin-top: 4px; }
+  .home-archive-toggle {
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+    padding: 10px 14px; border-radius: 10px; border: 1px solid #222;
+    background: #161616; color: #555; font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .8px; transition: all .15s; user-select: none;
+  }
+  .home-archive-toggle:hover { border-color: #333; color: #888; }
+  .home-archive-toggle svg { transition: transform .2s; flex-shrink: 0; }
+  .home-archive-toggle.open svg { transform: rotate(90deg); }
+  .home-archive-grid {
+    display: none; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px; width: 100%; padding-top: 10px;
+  }
+  .home-archive-grid.open { display: grid; }
+  .home-archive-badge { background: #252525; color: #555; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; margin-left: auto; }
+  .hfc-archive {
+    position: absolute; top: 36px; right: 10px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: transparent; border: none; color: #555;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.15s; font-size: 12px; line-height: 1; opacity: 0;
+  }
+  .home-film-card:hover .hfc-archive { opacity: 1; }
+  .hfc-archive:hover { background: #333 !important; color: #fff !important; }
+  /* ── Liste grid layout ── */
+  .lg-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .lg-row + .lg-row {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .lg-row-4 {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+  @media (max-width: 680px) {
+    .lg-row,
+    .lg-row + .lg-row,
+    .lg-row-4 {
+      grid-template-columns: 1fr !important;
+    }
+  }
+  .lg-col {
+    border: 1.5px solid #222;
+    min-height: 110px;
+    background: #fff;
+  }
+  .lg-col-head-btn { cursor: pointer; }
+  .lg-col-head-btn:hover { background: #333 !important; }
+  .lg-col-head {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-align: center;
+    padding: 9px 8px 8px;
+    text-transform: uppercase;
+    background: #111;
+    color: #fff;
+  }
+  .lg-col-body { padding: 10px 10px 6px; background: #fff; }
+  .lg-empty { color: #bbb; font-size: 13px; text-align: center; padding: 14px 0; }
+  .lg-item {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 5px 0;
+    background: #fff;
+  }
+  .lg-item + .lg-item { }
+  .lg-item-main { display: flex; align-items: flex-start; gap: 7px; flex: 1; min-width: 0; }
+  .lg-item-qt { color: #e84040; font-size: 13px; font-weight: 700; min-width: 14px; flex-shrink: 0; }
+  .lg-item-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .lg-item-nom { font-size: 13px; font-weight: 500; color: #111; word-break: break-word; }
+  .lg-item-link { cursor: pointer; }
+  .lg-item-link:hover { opacity: 0.7; }
+  .lg-item-notes { font-size: 11px; color: #999; }
+  .lg-item-actions { display: flex; gap: 2px; flex-shrink: 0; opacity: 0; transition: opacity .15s; }
+  .lg-item:hover .lg-item-actions { opacity: 1; }
+
+  /* ── Liste toggle buttons ── */
+  .ltog-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ltog-cat, .ltog-type {
+    padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500;
+    cursor: pointer; border: 1.5px solid #e0ddd8; background: #faf9f7;
+    color: #555; transition: all 0.15s; line-height: 1;
+  }
+  .ltog-cat:hover, .ltog-type:hover { border-color: #bbb; color: #111; }
+  .ltog-cat.on  { background: #111; border-color: #111; color: #fff; }
+  .ltog-type.on { background: #e84040; border-color: #e84040; color: #fff; }
+  .ltog-size { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1.5px solid #e0ddd8; background: #faf9f7; color: #555; transition: all 0.15s; line-height: 1; }
+  .ltog-size:hover { border-color: #bbb; color: #111; }
+  .ltog-size.on { background: #e84040; border-color: #e84040; color: #fff; }
+
+  .dot-green  { background: #22c55e; }
+  .dot-amber  { background: #f59e0b; }
+  .dot-blue   { background: #3b82f6; }
+  .dot-red    { background: #e84040; }
+  .dot-purple { background: #7f77dd; }
+  .dot-       { background: #555; }
+</style>
+</head>
+<body>
+
+<!-- ══ HOME SCREEN ══ -->
+<div class="home-screen hidden" id="home-screen">
+  <div class="home-logo">Canal <span>7</span></div>
+  <div class="home-sub">Prépa &amp; Tournage</div>
+
+  <div class="home-films-grid" id="home-films-grid"></div>
+
+  <div style="font-size:11px;color:#333;margin-top:8px;" id="home-empty-msg" class="hidden">
+    Aucun film pour le moment — créez votre premier projet.
+  </div>
+
+  <div class="home-archive-folder" id="home-archive-folder" style="display:none;">
+    <div class="home-archive-toggle" id="home-archive-toggle" onclick="toggleArchive()">
+      <span>📁</span>
+      Projets terminés
+      <span class="home-archive-badge" id="home-archive-badge">0</span>
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="home-archive-grid" id="home-archive-grid"></div>
+  </div>
+
+  <div class="home-footer">Canal 7 · Prépa &amp; Tournage</div>
+</div>
+<div class="app" id="app-screen">
+
+  <!-- ══ BOTTOM NAV ══ -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-left" onclick="goHome()" title="Retour à l'accueil">
+      <div class="bottom-nav-logo">C<span>7</span></div>
+    </div>
+    <div class="bottom-nav-film">
+      <div class="film-dot" id="current-film-dot"></div>
+      <div class="bottom-nav-film-title" id="current-film-title">—</div>
+      <button onclick="editCurrentFilm()" title="Modifier" style="flex-shrink:0;width:20px;height:20px;border-radius:4px;border:none;background:transparent;color:#444;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all 0.15s;" onmouseover="this.style.color='#aaa'" onmouseout="this.style.color='#444'">✎</button>
+    </div>
+    <div class="bottom-nav-items">
+      <button class="nav-item active" id="nav-liste" onclick="setView('liste')">
+        <svg width="16" height="16" viewBox="0 0 14 14" fill="none"><path d="M5 11h4M5.5 12.5h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M4 7.5C4 5.567 5.343 4 7 4s3 1.567 3 3.5c0 1.2-.6 2.1-1.5 2.5H5.5C4.6 9.6 4 8.7 4 7.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M7 1v1M2 3l.7.7M12 3l-.7.7M1.5 7.5h1M11.5 7.5h1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        <span>Liste</span>
+      </button>
+      <button class="nav-item" id="nav-decors" onclick="setView('decors')">
+        <svg width="16" height="16" viewBox="0 0 14 14" fill="none"><path d="M1 11V5l6-4 6 4v6a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1Z" stroke="currentColor" stroke-width="1.3"/><path d="M5 14v-4h4v4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Décors</span>
+      </button>
+      <button class="nav-item" id="nav-ponctuels" onclick="setView('ponctuels')">
+        <svg width="16" height="16" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="8" y="1" width="5" height="5" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="1" y="8" width="5" height="5" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="8" y="8" width="5" height="5" rx="1.5" stroke="currentColor" stroke-width="1.3"/></svg>
+        <span>Ponctuels</span>
+      </button>
+      <button class="nav-item" id="nav-calendrier" onclick="setView('calendrier')">
+        <svg width="16" height="16" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M1 6h12M4 1v2M10 1v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        <span>Calendrier</span>
+      </button>
+      <button class="nav-item" id="nav-equipe" onclick="setView('equipe')">
+        <svg width="16" height="16" viewBox="0 0 14 14" fill="none"><circle cx="5" cy="4" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 12c0-2.2 1.8-4 4-4s4 1.8 4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="10.5" cy="4.5" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M12.5 12c0-1.7-1-3.1-2.5-3.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        <span>Équipe</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ══ MAIN ══ -->
+  <div class="main">
+
+    <!-- ── VIEW: PONCTUELS ── -->
+    <div id="view-ponctuels">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">Les Ponctuels</div>
+          <div class="topbar-sub" id="topbar-sub-p">—</div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-dark" onclick="exportPDF()">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 2h6l3 3v7a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.3"/><path d="M8 2v3h3M3 8h7M3 10h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            Export PDF
+          </button>
+          <button class="btn btn-primary" onclick="openModal('ponctuel')">
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            Ajouter
+          </button>
+        </div>
+      </div>
+
+      <div class="stats-bar">
+        <div class="stat-card"><div class="stat-val" id="stat-count">0</div><div class="stat-label">Ponctuels</div></div>
+        <div class="stat-card"><div class="stat-val" id="stat-units">0</div><div class="stat-label">Unités</div></div>
+        <div class="stat-card"><div class="stat-val" id="stat-decors">0</div><div class="stat-label">Décors</div></div>
+        <div class="stat-card"><div class="stat-val red" id="stat-days">—</div><div class="stat-label">Durée tournage</div></div>
+      </div>
+
+      <div class="tabs" style="margin-top:4px;">
+        <div class="tab active" onclick="filterPonctuels('all',this)">Tous</div>
+        <div class="tab" onclick="filterPonctuels('dated',this)">Datés</div>
+        <div class="tab" onclick="filterPonctuels('undated',this)">Non datés</div>
+      </div>
+
+      <div class="content">
+        <div class="panel">
+          <div id="ponctuels-empty" class="empty hidden">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="4" y="4" width="32" height="32" rx="8" stroke="#ccc" stroke-width="2"/><path d="M20 13v14M13 20h14" stroke="#ccc" stroke-width="2" stroke-linecap="round"/></svg>
+            <p>Aucun ponctuel pour ce film.<br>Ajoutez votre premier matériel.</p>
+            <button class="btn btn-primary" onclick="openModal('ponctuel')">+ Ajouter un ponctuel</button>
+          </div>
+          <table class="tbl" id="ponctuels-table">
+            <thead>
+              <tr>
+                <th>Matériel</th>
+                <th>Qt</th>
+                <th>Départ</th>
+                <th>Retour</th>
+                <th>Décor</th>
+                <th>Statut</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="ponctuels-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── VIEW: LISTE ── -->
+    <div id="view-liste" class="hidden">
+      <div class="topbar" style="flex-direction:column;align-items:stretch;gap:4px;">
+        <div class="topbar-title" style="font-size:18px;">Liste Lumière</div>
+        <div class="topbar-sub" id="topbar-sub-liste" style="font-size:12px;"></div>
+        <div class="topbar-sub" id="topbar-sub-liste-dates" style="font-size:12px;"></div>
+      </div>
+      <div class="content" style="padding-top:20px;padding-bottom:72px;">
+        <div id="liste-grid"></div>
+        <div style="padding:16px 0 4px;display:flex;justify-content:center;">
+          <button class="btn btn-dark" onclick="exportListePDF()" style="width:100%;max-width:420px;justify-content:center;gap:8px;padding:13px 0;font-size:14px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+            <svg width="15" height="15" viewBox="0 0 13 13" fill="none"><path d="M2 2h6l3 3v7a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.3"/><path d="M8 2v3h3M3 8h7M3 10h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            Export PDF
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── VIEW: CALENDRIER ── -->
+    <div id="view-calendrier" class="hidden">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title" id="cal-month-label">Calendrier</div>
+          <div class="topbar-sub" id="topbar-sub-cal">Vue mensuelle</div>
+        </div>
+        <div class="btn-row">
+          <!-- Filter checkboxes -->
+          <div style="display:flex;gap:6px;flex-shrink:0;">
+            <label id="cal-filter-ponctuels" style="display:flex;align-items:center;gap:5px;padding:6px 11px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid #e84040;border-radius:7px;background:#e84040;color:#fff;transition:all 0.15s;user-select:none;">
+              <input type="checkbox" id="cal-chk-ponctuels" checked onchange="setCalFilter()" style="display:none;"> Ponctuels
+            </label>
+            <label id="cal-filter-decors" style="display:flex;align-items:center;gap:5px;padding:6px 11px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid #e0ddd8;border-radius:7px;background:transparent;color:#888;transition:all 0.15s;user-select:none;">
+              <input type="checkbox" id="cal-chk-decors" onchange="setCalFilter()" style="display:none;"> Décors
+            </label>
+            <label id="cal-filter-equipe" style="display:flex;align-items:center;gap:5px;padding:6px 11px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid #e0ddd8;border-radius:7px;background:transparent;color:#888;transition:all 0.15s;user-select:none;">
+              <input type="checkbox" id="cal-chk-equipe" onchange="setCalFilter()" style="display:none;"> Équipe
+            </label>
+          </div>
+          <button class="btn btn-ghost" onclick="calMonthNav(-1)">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7l5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="btn btn-ghost" style="font-size:12px;" onclick="calMonthToday()">Aujourd'hui</button>
+          <button class="btn btn-ghost" onclick="calMonthNav(1)">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 2l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="content" style="padding-top:16px;">
+        <div class="panel-flat" style="overflow:hidden;">
+          <div id="cal-empty" class="empty hidden">
+            <p>Aucun élément daté à afficher sur ce calendrier.</p>
+          </div>
+          <div id="cal-month-view"></div>
+        </div>
+        <!-- Detail panel -->
+        <div id="cal-day-detail" class="panel-flat hidden" style="margin-top:12px;padding:12px 16px;">
+          <div style="font-size:12px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;" id="cal-detail-title"></div>
+          <div id="cal-detail-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── VIEW: BUDGET ── -->
+
+    <!-- ── VIEW: DÉCORS ── -->
+    <div id="view-decors" class="hidden">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">Les Décors</div>
+          <div class="topbar-sub" id="topbar-sub-decors">Lieux de tournage du film</div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-dark" onclick="openDecorsPDFModal()">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 2h6l3 3v7a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.3"/><path d="M8 2v3h3M3 8h7M3 10h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            Export PDF
+          </button>
+          <button class="btn btn-primary" onclick="openModal('decor')">
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            Ajouter un décor
+          </button>
+        </div>
+      </div>
+      <div class="content" style="padding-top:20px;">
+        <div id="decors-cards"></div>
+        <div id="decors-empty" class="empty hidden" style="background:#fff;border:1px solid #ddd9d2;border-radius:12px;margin-top:0;">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><path d="M6 32V16l14-10 14 10v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2Z" stroke="#ccc" stroke-width="2"/><path d="M15 34V24h10v10" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <p>Aucun décor pour ce film.<br>Ajoutez les lieux de tournage.</p>
+          <button class="btn btn-primary" onclick="openModal('decor')">+ Ajouter un décor</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── VIEW: ÉQUIPE ── -->
+    <div id="view-equipe" class="hidden">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">Équipe</div>
+          <div class="topbar-sub" id="topbar-sub-equipe">Membres de l'équipe</div>
+        </div>
+        <button class="btn btn-primary" onclick="openModalMembre()">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          Ajouter
+        </button>
+      </div>
+      <div class="content" style="padding-top:20px;">
+        <div id="equipe-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;"></div>
+        <div id="equipe-empty" class="empty hidden" style="background:#fff;border:1px solid #ddd9d2;border-radius:12px;">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><circle cx="16" cy="14" r="7" stroke="#ccc" stroke-width="2"/><path d="M4 36c0-6.6 5.4-12 12-12s12 5.4 12 12" stroke="#ccc" stroke-width="2" stroke-linecap="round"/><path d="M30 20a6 6 0 0 1 6 6" stroke="#ccc" stroke-width="2" stroke-linecap="round"/><circle cx="30" cy="13" r="4.5" stroke="#ccc" stroke-width="2"/></svg>
+          <p>Aucun membre pour ce film.<br>Ajoutez votre équipe.</p>
+          <button class="btn btn-primary" onclick="openModalMembre()">+ Ajouter un membre</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app-screen -->
+
+<!-- ══ MODALS ══ -->
+
+<!-- Modal membre équipe -->
+<div class="modal-overlay" id="modal-membre">
+  <div class="modal" style="width:560px;">
+    <div class="modal-title" id="modal-membre-title">Nouveau membre</div>
+    <input type="hidden" id="edit-membre-id">
+
+    <!-- Photo -->
+    <div style="display:flex;gap:16px;align-items:flex-start;margin-bottom:16px;">
+      <div id="m-photo-preview" onclick="triggerMembrePhoto()" style="width:72px;height:72px;border-radius:50%;background:#f0ede8;border:2px dashed #ccc;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;" title="Cliquez pour ajouter une photo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#ccc" stroke-width="1.5"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="#ccc" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <div style="flex:1;">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Prénom</label>
+            <input class="form-input" id="m-prenom" placeholder="Prénom">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nom</label>
+            <input class="form-input" id="m-nom" placeholder="NOM">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Poste</label>
+          <select class="form-input" id="m-poste">
+            <option value="">— Choisir un poste —</option>
+            <option value="Chef/fe électro">Chef/fe électro</option>
+            <option value="1er/ère électro">1er/ère électro</option>
+            <option value="2nd électro">2nd électro</option>
+            <option value="3ème électro">3ème électro</option>
+            <option value="4ème électro">4ème électro</option>
+            <option value="5ème électro">5ème électro</option>
+            <option value="6ème électro">6ème électro</option>
+            <option value="7ème électro">7ème électro</option>
+            <option value="8ème électro">8ème électro</option>
+            <option value="9ème électro">9ème électro</option>
+            <option value="10ème électro">10ème électro</option>
+            <option value="Groupeman">Groupeman</option>
+            <option value="Renfort">Renfort</option>
+            <option value="Pupitreur/euse">Pupitreur/euse</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Téléphone</label>
+        <input class="form-input" id="m-tel" type="tel" placeholder="+33 6 …">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="m-email" type="email" placeholder="prenom@mail.com">
+      </div>
+    </div>
+
+    <div class="form-sep"></div>
+    <div class="form-section-title">Présence sur le tournage</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Du</label>
+        <input class="form-input" id="m-du" type="date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Au</label>
+        <input class="form-input" id="m-au" type="date">
+      </div>
+    </div>
+
+    <div class="form-sep"></div>
+    <div class="form-section-title">Permis de conduire</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;padding:7px 14px;border:1px solid #e0ddd8;border-radius:8px;background:#faf9f7;">
+        <input type="checkbox" id="m-permis-vl" style="accent-color:#e84040;"> VL
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;padding:7px 14px;border:1px solid #e0ddd8;border-radius:8px;background:#faf9f7;">
+        <input type="checkbox" id="m-permis-pl" style="accent-color:#e84040;"> PL
+      </label>
+    </div>
+
+    <div class="form-sep"></div>
+    <div class="form-section-title">Habilitation électrique</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
+      <button type="button" id="m-hab-btn-non" onclick="setHabMode('non')" style="flex:1;padding:7px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid #e84040;background:#e84040;color:#fff;transition:all 0.15s;">Non</button>
+      <button type="button" id="m-hab-btn-oui" onclick="setHabMode('oui')" style="flex:1;padding:7px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid #e0ddd8;background:transparent;color:#888;transition:all 0.15s;">Oui</button>
+    </div>
+    <div id="m-hab-fichier-zone" style="display:none;">
+      <div id="m-hab-file-preview" style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f0ede8;border-radius:8px;font-size:12px;color:#555;cursor:pointer;" onclick="triggerHabFile()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 2h7l3 3v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.3"/><path d="M10 2v3h3" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span id="m-hab-file-name">Importer un fichier (PDF, image…)</span>
+        <button type="button" id="m-hab-file-clear" onclick="event.stopPropagation();clearHabFile()" style="display:none;margin-left:auto;background:none;border:none;color:#aaa;cursor:pointer;font-size:16px;">✕</button>
+      </div>
+    </div>
+
+    <div class="form-sep"></div>
+    <div class="form-section-title">Permis — Fichier justificatif</div>
+    <div id="m-permis-file-preview" style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f0ede8;border-radius:8px;font-size:12px;color:#555;cursor:pointer;" onclick="triggerPermisFile()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 2h7l3 3v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.3"/><path d="M10 2v3h3" stroke="currentColor" stroke-width="1.2"/></svg>
+      <span id="m-permis-file-name">Importer un fichier (PDF, image…)</span>
+      <button type="button" id="m-permis-file-clear" onclick="event.stopPropagation();clearPermisFile()" style="display:none;margin-left:auto;background:none;border:none;color:#aaa;cursor:pointer;font-size:16px;">✕</button>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-membre')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveMembre()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal ponctuel -->
+<div class="modal-overlay" id="modal-ponctuel">
+  <div class="modal">
+    <div class="modal-title" id="modal-ponctuel-title">Nouveau ponctuel</div>
+    <input type="hidden" id="edit-ponctuel-id">
+
+    <div class="form-section-title">Matériel</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nom</label>
+        <input class="form-input" id="p-nom" placeholder="ex: Arrimax 18, Joker 800…">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <select class="form-input" id="p-type">
+          <option value="">— Choisir —</option>
+          <option value="HMI">HMI</option>
+          <option value="TUNGSTEN">TUNGSTEN</option>
+          <option value="LED">LED</option>
+          <option value="FLUO">FLUO</option>
+          <option value="AUTRE">AUTRE</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Quantité</label>
+        <select class="form-input" id="p-qt"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Décor</label>
+        <select class="form-input" id="p-decor" onchange="onDecorChange(this)">
+          <option value="">— Choisir un décor —</option>
+        </select>
+        <input class="form-input" id="p-decor-manual" placeholder="Nom du décor…" style="display:none;margin-top:6px;">
+      </div>
+    </div>
+
+    <div class="form-sep"></div>
+    <div class="form-section-title">Dates de location</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Départ</label>
+        <input class="form-input" id="p-depart" type="date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Retour</label>
+        <input class="form-input" id="p-retour" type="date">
+      </div>
+    </div>
+
+    <div class="form-sep"></div>
+    <div class="form-group">
+      <label class="form-label">Infos lumière / notes</label>
+      <textarea class="form-input" id="p-notes" rows="2" placeholder="puissance, accessoires, remarques…"></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-ponctuel')">Annuler</button>
+      <button class="btn btn-primary" onclick="savePonctuel()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal liste -->
+<div class="modal-overlay" id="modal-liste">
+  <div class="modal">
+    <div class="modal-title">Matériel permanent</div>
+    <input type="hidden" id="edit-liste-id">
+
+    <div class="form-group" id="l-cats-group">
+      <label class="form-label">Catégorie</label>
+      <div class="ltog-row" id="l-cats">
+        <button type="button" class="ltog-cat" data-cat="Projecteurs" onclick="toggleListeCat('Projecteurs')">Projecteurs</button>
+        <button type="button" class="ltog-cat" data-cat="Pieds"       onclick="toggleListeCat('Pieds')">Pieds</button>
+        <button type="button" class="ltog-cat" data-cat="Grip"        onclick="toggleListeCat('Grip')">Grip</button>
+        <button type="button" class="ltog-cat" data-cat="Electricité" onclick="toggleListeCat('Electricité')">Électricité</button>
+        <button type="button" class="ltog-cat" data-cat="CRMX"        onclick="toggleListeCat('CRMX')">CRMX</button>
+        <button type="button" class="ltog-cat" data-cat="Accessoires" onclick="toggleListeCat('Accessoires')">Accessoires</button>
+        <button type="button" class="ltog-cat" data-cat="Consommables" onclick="toggleListeCat('Consommables')">Consommables</button>
+        <button type="button" class="ltog-cat" data-cat="Cadres"       onclick="toggleListeCat('Cadres')">Cadres</button>
+        <button type="button" class="ltog-cat" data-cat="Toiles"       onclick="toggleListeCat('Toiles')">Toiles</button>
+      </div>
+    </div>
+
+    <div class="form-group" id="l-types-group" style="display:none;">
+      <label class="form-label" id="l-types-label">Type</label>
+      <div class="ltog-row" id="l-types"></div>
+    </div>
+
+    <div class="form-group" id="l-taille-group" style="display:none;">
+      <label class="form-label">Taille</label>
+      <div class="ltog-row" id="l-tailles">
+        <button type="button" class="ltog-size" data-size="2x2m" onclick="toggleListeSize('2x2m')">2x2m</button>
+        <button type="button" class="ltog-size" data-size="3x3m" onclick="toggleListeSize('3x3m')">3x3m</button>
+        <button type="button" class="ltog-size" data-size="4x4m" onclick="toggleListeSize('4x4m')">4x4m</button>
+        <button type="button" class="ltog-size" data-size="4x6m" onclick="toggleListeSize('4x6m')">4x6m</button>
+        <button type="button" class="ltog-size" data-size="6x6m" onclick="toggleListeSize('6x6m')">6x6m</button>
+      </div>
+    </div>
+
+    <div class="form-group" id="l-cadre-group" style="display:none;">
+      <label class="form-label">Taille</label>
+      <div style="margin-bottom:6px;">
+        <span style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;">Cm</span>
+        <div class="ltog-row" style="margin-top:4px;" id="l-cadre-cm">
+          <button type="button" class="ltog-size" data-size="60x60cm" onclick="toggleListeSize('60x60cm')">60/60</button>
+          <button type="button" class="ltog-size" data-size="90x90cm" onclick="toggleListeSize('90x90cm')">90/90</button>
+          <button type="button" class="ltog-size" data-size="120x120cm" onclick="toggleListeSize('120x120cm')">120/120</button>
+          <button type="button" class="ltog-size" data-size="150x150cm" onclick="toggleListeSize('150x150cm')">150/150</button>
+          <button type="button" class="ltog-size" data-size="200x120cm" onclick="toggleListeSize('200x120cm')">200/120</button>
+        </div>
+      </div>
+      <div>
+        <span style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;">M</span>
+        <div class="ltog-row" style="margin-top:4px;" id="l-cadre-m">
+          <button type="button" class="ltog-size" data-size="c-2x2m" onclick="toggleListeSize('c-2x2m')">2/2</button>
+          <button type="button" class="ltog-size" data-size="c-3x3m" onclick="toggleListeSize('c-3x3m')">3/3</button>
+          <button type="button" class="ltog-size" data-size="c-4x4m" onclick="toggleListeSize('c-4x4m')">4/4</button>
+          <button type="button" class="ltog-size" data-size="c-4x6m" onclick="toggleListeSize('c-4x6m')">4/6</button>
+          <button type="button" class="ltog-size" data-size="c-6x6m" onclick="toggleListeSize('c-6x6m')">6/6</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group" id="l-proj-group" style="display:none;">
+      <label class="form-label">Référence projecteur</label>
+      <div style="position:relative;">
+        <input class="form-input" id="l-proj-ref" type="text" placeholder="Rechercher un projecteur…" autocomplete="off"
+          oninput="projRefInput(this.value)"
+          onblur="projRefHide()"
+          onkeydown="projRefKey(event)">
+        <div id="proj-ref-drop" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:1px solid #e0ddd8;border-top:none;border-radius:0 0 8px 8px;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12);"></div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Quantité</label>
+      <select class="form-input" id="l-qt"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <input class="form-input" id="l-notes" placeholder="remarques optionnelles">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="l-delete-btn" style="display:none;" onclick="deleteListe()">Supprimer</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-liste')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveListe()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal film -->
+<div class="modal-overlay" id="modal-film">
+  <div class="modal">
+    <div class="modal-title" id="modal-film-title">Nouveau film / projet</div>
+    <input type="hidden" id="edit-film-id">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Titre</label>
+        <input class="form-input" id="f-titre" placeholder="Titre du film">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Production</label>
+        <input class="form-input" id="f-prod" placeholder="Société de production">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Chef électricien</label>
+      <input class="form-input" id="f-chef" placeholder="Prénom Nom">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Début tournage</label>
+        <input class="form-input" id="f-du" type="date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fin tournage</label>
+        <input class="form-input" id="f-au" type="date">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Chargements</label>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+        <input class="form-input" id="f-charg-pick" type="date" style="flex:1;">
+        <button type="button" class="btn btn-primary" style="padding:8px 14px;flex-shrink:0;" onclick="addChargDate()">+ Ajouter</button>
+      </div>
+      <div id="f-charg-list" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Rendus</label>
+        <input class="form-input" id="f-rendu" type="date">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Couleur</label>
+      <select class="form-input" id="f-couleur">
+        <option value="green">Vert (en cours)</option>
+        <option value="amber">Orange (en prépa)</option>
+        <option value="blue">Bleu (post-prod)</option>
+        <option value="archived">Gris (archivé)</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-film')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveFilm()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal décor -->
+<div class="modal-overlay" id="modal-decor">
+  <div class="modal">
+    <div class="modal-title" id="modal-decor-title">Nouveau décor</div>
+    <input type="hidden" id="edit-decor-id">
+    <div class="form-row">
+      <div class="form-group" style="grid-column:1/-1;">
+        <label class="form-label">Nom du décor</label>
+        <input class="form-input" id="d-nom" placeholder="ex: Appartement Haussmann, Extérieur nuit, Studio 4…">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Adresse / lieu</label>
+        <div style="position:relative;">
+          <input class="form-input" id="d-adresse" placeholder="Tapez une adresse…" autocomplete="off"
+            oninput="adresseInput(this.value)"
+            onblur="adresseHide()"
+            onkeydown="adresseKey(event)">
+          <div id="adresse-drop" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:1px solid #e0ddd8;border-top:none;border-radius:0 0 8px 8px;max-height:210px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12);"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <select class="form-input" id="d-type">
+          <option value="">— Choisir —</option>
+          <option value="Intérieur jour">Intérieur jour</option>
+          <option value="Intérieur nuit">Intérieur nuit</option>
+          <option value="Extérieur jour">Extérieur jour</option>
+          <option value="Extérieur nuit">Extérieur nuit</option>
+          <option value="Studio">Studio</option>
+          <option value="Autre">Autre</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Jours de tournage prévus</label>
+        <select class="form-input" id="d-jours"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Couleur repère</label>
+        <select class="form-input" id="d-couleur">
+          <option value="blue">Bleu</option>
+          <option value="green">Vert</option>
+          <option value="amber">Orange</option>
+          <option value="red">Rouge</option>
+          <option value="purple">Violet</option>
+          <option value="gray">Gris</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-sep"></div>
+    <div class="form-section-title">Dates de tournage</div>
+
+    <!-- Mode selector -->
+    <div style="display:flex;gap:6px;margin-bottom:12px;">
+      <button type="button" id="d-mode-btn-periode" onclick="setDecorDateMode('periode')"
+        style="flex:1;padding:7px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid #e84040;background:#e84040;color:#fff;transition:all 0.15s;">
+        Période (début → fin)
+      </button>
+      <button type="button" id="d-mode-btn-isolees" onclick="setDecorDateMode('isolees')"
+        style="flex:1;padding:7px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid #e0ddd8;background:transparent;color:#888;transition:all 0.15s;">
+        Dates isolées
+      </button>
+    </div>
+
+    <!-- Période -->
+    <div id="d-mode-periode">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Début</label>
+          <input class="form-input" id="d-date-debut" type="date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fin</label>
+          <input class="form-input" id="d-date-fin" type="date">
+        </div>
+      </div>
+    </div>
+
+    <!-- Dates isolées -->
+    <div id="d-mode-isolees" style="display:none;">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+        <input class="form-input" id="d-date-isolee-input" type="date" style="flex:1;">
+        <button type="button" onclick="addDecorDate()" class="btn btn-primary" style="flex-shrink:0;padding:8px 14px;">+ Ajouter</button>
+      </div>
+      <div id="d-dates-isolees-list" style="display:flex;flex-wrap:wrap;gap:6px;min-height:28px;"></div>
+    </div>
+    <div class="form-sep"></div>
+    <div class="form-section-title">Renforts</div>
+    <div id="d-renforts-zone">
+      <!-- Populated dynamically from equipe -->
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Notes / contraintes lumière</label>
+      <textarea class="form-input" id="d-notes" rows="3" placeholder="Hauteur sous plafond, fenêtres, contraintes électriques, accès…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-decor')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveDecor()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+<!-- Modal sélection décors PDF -->
+<div class="modal-overlay" id="modal-decors-pdf">
+  <div class="modal" style="width:420px;">
+    <div class="modal-title">Exporter les décors en PDF</div>
+    <p style="font-size:13px;color:#888;margin-bottom:14px;">Choisissez les décors à inclure dans l'export.</p>
+    <div style="margin-bottom:10px;display:flex;gap:8px;">
+      <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px;" onclick="toggleAllDecorsPDF(true)">Tout sélectionner</button>
+      <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px;" onclick="toggleAllDecorsPDF(false)">Tout désélectionner</button>
+    </div>
+    <div id="decors-pdf-list" style="max-height:300px;overflow-y:auto;border:1px solid #e0ddd8;border-radius:8px;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-decors-pdf')">Annuler</button>
+      <button class="btn btn-dark" onclick="exportDecorsPDFSelected()">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 2h6l3 3v7a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.3"/><path d="M8 2v3h3M3 8h7M3 10h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Exporter
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <h3>Supprimer ?</h3>
+    <p id="confirm-msg">Cette action est irréversible.</p>
+    <div class="btn-row" style="justify-content:center;gap:10px;">
+      <button class="btn btn-ghost" onclick="closeConfirm()">Annuler</button>
+      <button class="btn btn-danger" id="confirm-ok">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════ */
+let state = {
+  films: [
+    { id: 'f1', titre: 'Film A — Tournage', prod: 'Canal 7 Productions', chef: 'Marc Dupont', du: '2024-10-21', au: '2024-11-14', couleur: 'green' },
+    { id: 'f2', titre: 'Pub Canal+ Hiver', prod: 'Agence Publicis', chef: 'Sophie Martin', du: '2024-12-02', au: '2024-12-05', couleur: 'amber' },
+    { id: 'f3', titre: 'Série Saison 3', prod: 'TF1 Studios', chef: 'Marc Dupont', du: '2025-02-10', au: '2025-04-20', couleur: 'blue' },
+  ],
+  currentFilm: 'f1',
+  ponctuels: [
+    { id: 'p1', filmId: 'f1', nom: 'Arrimax 18', type: 'Source HMI', qt: 2, depart: '2024-10-21', retour: '2024-10-23', decor: 'Appartement', notes: '' },
+    { id: 'p2', filmId: 'f1', nom: '80c', type: 'Fresnel tungstène', qt: 2, depart: '', retour: '', decor: '', notes: '' },
+    { id: 'p3', filmId: 'f1', nom: 'Joker 1600', type: 'Source HMI', qt: 4, depart: '2024-10-25', retour: '2024-10-28', decor: 'Bureau ministre', notes: '' },
+    { id: 'p4', filmId: 'f1', nom: 'SkyPanel S360', type: 'LED RGB', qt: 1, depart: '2024-10-29', retour: '2024-10-31', decor: 'Extérieur nuit', notes: 'Avec Snapbag et 4 SkyLink' },
+    { id: 'p5', filmId: 'f2', nom: 'Arri L7-TT', type: 'LED Tunable', qt: 3, depart: '2024-12-02', retour: '2024-12-04', decor: 'Studio 4', notes: '' },
+  ],
+  liste: [
+    { id: 'l1', filmId: 'f1', nom: 'Arrimax 18', qt: 1, notes: '' },
+    { id: 'l2', filmId: 'f1', nom: 'Joker 1600', qt: 4, notes: '' },
+    { id: 'l3', filmId: 'f1', nom: 'Condor 100', qt: 2, notes: 'Avec bras' },
+  ],
+  decors: [
+    { id: 'd1', filmId: 'f1', nom: 'Appartement', adresse: '12 rue des Lilas, Paris 11e', type: 'Intérieur jour', jours: 3, couleur: 'blue', notes: 'Plafond bas 2m40, fenêtres côté rue', photos: [] },
+    { id: 'd2', filmId: 'f1', nom: 'Bureau ministre', adresse: 'Ministère fictif, Studio de Bry', type: 'Studio', jours: 2, couleur: 'green', notes: 'Hauteur 4m, plateau 600m²', photos: [] },
+    { id: 'd3', filmId: 'f1', nom: 'Extérieur nuit', adresse: 'Place de la République, Paris', type: 'Extérieur nuit', jours: 1, couleur: 'amber', notes: 'Groupe électrogène nécessaire', photos: [] },
+  ],
+  currentView: 'ponctuels',
+  currentFilter: 'all',
+  pendingDelete: null,
+};
+
+/* ═══════════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════════ */
+function uid() { return '_' + Math.random().toString(36).slice(2, 9); }
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+}
+
+function fmtDateLong(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function daysBetween(a, b) {
+  if (!a || !b) return 0;
+  return Math.max(0, Math.round((new Date(b) - new Date(a)) / 86400000) + 1);
+}
+
+function currentFilmData() { return state.films.find(f => f.id === state.currentFilm); }
+
+function ponctuelsForCurrentFilm() {
+  return state.ponctuels.filter(p => p.filmId === state.currentFilm);
+}
+
+function listeForCurrentFilm() {
+  return state.liste.filter(l => l.filmId === state.currentFilm);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function saveToStorage() {
+  try { localStorage.setItem('ponctuels-state', JSON.stringify(state)); } catch(e) {}
+}
+
+function loadFromStorage() {
+  try {
+    const s = localStorage.getItem('ponctuels-state');
+    if (s) {
+      const parsed = JSON.parse(s);
+      if (parsed.films && parsed.ponctuels) state = parsed;
+    }
+  } catch(e) {}
+  if (!state.equipe) state.equipe = [];
+}
+
+/* ═══════════════════════════════════════════════
+   EXPORT / IMPORT JSON
+═══════════════════════════════════════════════ */
+function exportData() {
+  const payload = JSON.stringify(state, null, 2);
+  const blob = new Blob([payload], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `canal7-données-${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Données exportées ✓');
+}
+
+function triggerImport() {
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = '.json,application/json';
+  inp.style.display = 'none';
+  inp.addEventListener('change', function() {
+    const file = inp.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const parsed = JSON.parse(e.target.result);
+        if (!parsed.films || !parsed.ponctuels) {
+          showToast('Fichier invalide — données non reconnues'); return;
+        }
+        if (!confirm(`Importer ce fichier ?\n\n${parsed.films.length} film(s), ${parsed.ponctuels.length} ponctuel(s), ${(parsed.decors||[]).length} décor(s).\n\nVos données actuelles seront remplacées.`)) return;
+        state = parsed;
+        // Ensure optional arrays exist
+        if (!state.decors) state.decors = [];
+        if (!state.liste) state.liste = [];
+        saveToStorage();
+        renderHome();
+        goHome();
+        showToast('Données importées ✓');
+      } catch(err) {
+        showToast('Erreur de lecture du fichier JSON');
+      }
+    };
+    reader.readAsText(file);
+  });
+  document.body.appendChild(inp);
+  inp.click();
+  document.body.removeChild(inp);
+}
+
+/* ═══════════════════════════════════════════════
+   SIDEBAR / FILMS
+═══════════════════════════════════════════════ */
+function renderSidebar() {
+  const f = currentFilmData();
+  document.getElementById('current-film-title').textContent = f ? f.titre : '—';
+  const dot = document.getElementById('current-film-dot');
+  dot.className = 'film-dot' + (f && f.couleur ? ' ' + f.couleur : '');
+}
+
+function selectFilm(id) {
+  state.currentFilm = id;
+  renderSidebar();
+  renderAll();
+}
+
+function saveFilm() {
+  const id = document.getElementById('edit-film-id').value;
+  const data = {
+    titre: document.getElementById('f-titre').value.trim(),
+    prod:  document.getElementById('f-prod').value.trim(),
+    chef:  document.getElementById('f-chef').value.trim(),
+    du:    document.getElementById('f-du').value,
+    au:    document.getElementById('f-au').value,
+    charg: (window._chargDates || []).join(','),
+    chargJours: (window._chargDates || []).length || 1,
+    rendu: document.getElementById('f-rendu').value,
+    couleur: document.getElementById('f-couleur').value,
+  };
+  let isNew = false;
+  if (id) {
+    const f = state.films.find(f => f.id === id);
+    if (f) Object.assign(f, data);
+    showToast('Film modifié');
+  } else {
+    const newFilm = { id: uid(), ...data };
+    state.films.push(newFilm);
+    state.currentFilm = newFilm.id;
+    showToast('Film créé');
+    isNew = true;
+  }
+  saveToStorage();
+  closeModal('modal-film');
+  renderSidebar();
+  renderAll();
+  // If created from home, open the film directly
+  if (isNew && _newFilmFromHome) {
+    _newFilmFromHome = false;
+    openFilm(state.currentFilm);
+  } else if (_newFilmFromHome) {
+    _newFilmFromHome = false;
+    goHome();
+  } else if (_editFilmFromHome) {
+    _editFilmFromHome = false;
+    goHome();
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   VIEWS
+═══════════════════════════════════════════════ */
+function setView(v) {
+  ['ponctuels','liste','calendrier','decors','equipe'].forEach(id => {
+    document.getElementById('view-'+id).classList.toggle('hidden', id !== v);
+    document.getElementById('nav-'+id).classList.toggle('active', id === v);
+  });
+  state.currentView = v;
+  if (v === 'calendrier') renderCalendar();
+  if (v === 'decors') renderDecors();
+  if (v === 'equipe') renderEquipe();
+}
+
+/* ═══════════════════════════════════════════════
+   PONCTUELS
+═══════════════════════════════════════════════ */
+function filmSubText() {
+  const film = currentFilmData();
+  if (!film) return '';
+  const titre = film.titre && film.titre !== 'Sans titre' ? film.titre : '';
+  const dates = film.du ? `${fmtDate(film.du)} – ${fmtDate(film.au)}` : '';
+  return [titre, dates].filter(Boolean).join(' · ');
+}
+
+function updateAllSubs() {
+  const sub = filmSubText();
+  ['topbar-sub-p','topbar-sub-liste','topbar-sub-cal','topbar-sub-decors','topbar-sub-equipe'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = sub;
+  });
+}
+
+function renderPonctuels() {
+  const film = currentFilmData();
+  const sub = filmSubText();
+  document.getElementById('topbar-sub-p').textContent = sub;
+
+  let list = ponctuelsForCurrentFilm();
+
+  // Stats
+  document.getElementById('stat-count').textContent = list.length;
+  document.getElementById('stat-units').textContent = list.reduce((s,p) => s + (parseInt(p.qt)||0), 0);
+  const decors = new Set(list.map(p => p.decor).filter(Boolean));
+  document.getElementById('stat-decors').textContent = decors.size;
+  if (film && film.du && film.au) {
+    document.getElementById('stat-days').textContent = daysBetween(film.du, film.au) + 'j';
+  } else {
+    document.getElementById('stat-days').textContent = '—';
+  }
+
+  // Filter
+  if (state.currentFilter === 'dated') list = list.filter(p => p.depart);
+  if (state.currentFilter === 'undated') list = list.filter(p => !p.depart);
+
+  const empty = document.getElementById('ponctuels-empty');
+  const table = document.getElementById('ponctuels-table');
+
+  if (list.length === 0) {
+    empty.classList.remove('hidden');
+    table.classList.add('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+  table.classList.remove('hidden');
+
+  document.getElementById('ponctuels-tbody').innerHTML = list.map(p => {
+    const dated = p.depart && p.retour;
+    const badge = dated
+      ? `<span class="badge badge-green">Daté</span>`
+      : `<span class="badge badge-amber">Non daté</span>`;
+    return `
+      <tr>
+        <td>
+          <strong>${esc(p.nom)}</strong>
+          ${p.type ? `<span class="sub">${esc(p.type)}</span>` : ''}
+          ${p.notes ? `<span class="sub" style="font-style:italic;">${esc(p.notes)}</span>` : ''}
+        </td>
+        <td class="qty">${p.qt}×</td>
+        <td class="date-cell">${fmtDate(p.depart)}</td>
+        <td class="date-cell">${fmtDate(p.retour)}</td>
+        <td>${p.decor ? `<span class="badge badge-gray">${esc(p.decor)}</span>` : '—'}</td>
+        <td>${badge}</td>
+        <td style="white-space:nowrap;">
+          <button class="icon-btn" title="Modifier" onclick="editPonctuel('${p.id}')">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M9 2l2 2-7 7H2V9L9 2Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="icon-btn" title="Supprimer" onclick="confirmDelete('ponctuel','${p.id}','${esc(p.nom)}')">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 3h11M4 3V2h5v1M5 6v4M8 6v4M2 3l1 9h7l1-9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function filterPonctuels(f, el) {
+  state.currentFilter = f;
+  document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderPonctuels();
+}
+
+function openModal(type) {
+  if (type === 'decor') { openModalDecorReset(); return; }
+  if (type === 'ponctuel') {
+    document.getElementById('modal-ponctuel-title').textContent = 'Nouveau ponctuel';
+    document.getElementById('edit-ponctuel-id').value = '';
+    ['p-nom','p-decor-manual','p-notes'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('p-type').selectedIndex = 0;
+    document.getElementById('p-decor').selectedIndex = 0;
+    document.getElementById('p-decor-manual').style.display = 'none';
+    document.getElementById('p-qt').value = '1';
+    document.getElementById('p-depart').value = '';
+    document.getElementById('p-retour').value = '';
+  }
+  if (type === 'liste') {
+    document.getElementById('edit-liste-id').value = '';
+    document.querySelectorAll('.ltog-cat').forEach(b => b.classList.remove('on'));
+    document.querySelectorAll('.ltog-type').forEach(b => b.classList.remove('on'));
+    document.getElementById('l-cats-group').style.display = '';
+    document.getElementById('l-types-group').style.display = 'none';
+    document.getElementById('l-types').innerHTML = '';
+    document.getElementById('l-proj-group').style.display = 'none';
+    document.getElementById('l-proj-ref').value = '';
+    document.getElementById('proj-ref-drop').style.display = 'none';
+    document.getElementById('l-cadre-group').style.display = 'none';
+    document.getElementById('l-delete-btn').style.display = 'none';
+    document.getElementById('l-taille-group').style.display = 'none';
+    document.querySelectorAll('.ltog-size').forEach(b => b.classList.remove('on'));
+    document.getElementById('l-notes').value = '';
+    document.getElementById('l-qt').value = '1';
+  }
+  if (type === 'film') {
+    document.getElementById('modal-film-title').textContent = 'Nouveau film / projet';
+    document.getElementById('edit-film-id').value = '';
+    ['f-titre','f-prod','f-chef','f-du','f-au','f-rendu'].forEach(id => document.getElementById(id).value = '');
+    window._chargDates = [];
+    renderChargList();
+    document.getElementById('f-charg-jours') && (document.getElementById('f-charg-jours').value = '1');
+    document.getElementById('f-couleur').value = 'green';
+  }
+  document.getElementById('modal-' + type).classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+
+function savePonctuel() {
+  const nom = document.getElementById('p-nom').value.trim();
+  if (!nom) { showToast('Saisissez un nom de matériel'); return; }
+  const id = document.getElementById('edit-ponctuel-id').value;
+  const data = {
+    filmId: state.currentFilm,
+    nom,
+    type:   document.getElementById('p-type').value.trim(),
+    qt:     parseInt(document.getElementById('p-qt').value) || 1,
+    depart: document.getElementById('p-depart').value,
+    retour: document.getElementById('p-retour').value,
+    decor:  document.getElementById('p-decor').value === '__autre__'
+              ? document.getElementById('p-decor-manual').value.trim()
+              : document.getElementById('p-decor').value,
+    notes:  document.getElementById('p-notes').value.trim(),
+  };
+  if (id) {
+    const p = state.ponctuels.find(p => p.id === id);
+    if (p) Object.assign(p, data);
+    showToast('Ponctuel modifié');
+  } else {
+    state.ponctuels.push({ id: uid(), ...data });
+    showToast('Ponctuel ajouté');
+  }
+  saveToStorage();
+  closeModal('modal-ponctuel');
+  renderAll();
+}
+
+function editPonctuel(id) {
+  const p = state.ponctuels.find(p => p.id === id);
+  if (!p) return;
+  document.getElementById('modal-ponctuel-title').textContent = 'Modifier le ponctuel';
+  document.getElementById('edit-ponctuel-id').value = p.id;
+  document.getElementById('p-nom').value = p.nom;
+  document.getElementById('p-type').value = p.type;
+  document.getElementById('p-qt').value = p.qt;
+  document.getElementById('p-depart').value = p.depart;
+  document.getElementById('p-retour').value = p.retour;
+  // Try to match decor in dropdown, else use manual
+  refreshDecorDropdown();
+  const sel = document.getElementById('p-decor');
+  const match = [...sel.options].find(o => o.value === p.decor);
+  if (match) {
+    sel.value = p.decor;
+    document.getElementById('p-decor-manual').style.display = 'none';
+  } else if (p.decor) {
+    sel.value = '__autre__';
+    document.getElementById('p-decor-manual').style.display = 'block';
+    document.getElementById('p-decor-manual').value = p.decor;
+  } else {
+    sel.selectedIndex = 0;
+    document.getElementById('p-decor-manual').style.display = 'none';
+  }
+  document.getElementById('p-notes').value = p.notes;
+  document.getElementById('modal-ponctuel').classList.add('open');
+}
+
+/* ═══════════════════════════════════════════════
+   LISTE PERMANENTE
+═══════════════════════════════════════════════ */
+// Colonne order & labels for the liste grid
+const LISTE_COLS = [
+  { key: 'LED',           label: 'LED' },
+  { key: 'HMI',          label: 'HMI' },
+  { key: 'TUNG',         label: 'TUNGSTÈNE' },
+  { key: 'AUTRES',       label: 'AUTRES' },
+  { key: 'Pieds',        label: 'PIED' },
+  { key: 'Grip',         label: 'GRIP' },
+  { key: 'Electricité',  label: 'ÉLECTRICITÉ' },
+  { key: 'CRMX',         label: 'CRMX' },
+  { key: 'Accessoires',  label: 'ACCESSOIRES' },
+  { key: 'Cadres',       label: 'CADRES' },
+  { key: 'Toiles',       label: 'TOILES' },
+  { key: 'Consommables', label: 'CONSOMMABLES' },
+];
+
+// Map items to their column key
+function listeColKey(l) {
+  // Projecteur sub-types map to their sousCat directly
+  if (l.cat === 'Projecteurs') return l.sousCat || 'AUTRES';
+  return l.cat || 'AUTRES';
+}
+
+// Map column key → {cat, sousCat}
+const COL_TO_CAT = {
+  'LED':           { cat: 'Projecteurs', sousCat: 'LED' },
+  'HMI':           { cat: 'Projecteurs', sousCat: 'HMI' },
+  'TUNG':          { cat: 'Projecteurs', sousCat: 'TUNG' },
+  'AUTRES':        { cat: 'Projecteurs', sousCat: 'AUTRES' },
+  'Pieds':         { cat: 'Pieds',       sousCat: null },
+  'Grip':          { cat: 'Grip',        sousCat: null },
+  'Electricité':   { cat: 'Electricité', sousCat: null },
+  'CRMX':          { cat: 'CRMX',        sousCat: null },
+  'Accessoires':   { cat: 'Accessoires', sousCat: null },
+  'Cadres':        { cat: 'Cadres',        sousCat: null },
+  'Consommables':  { cat: 'Consommables',  sousCat: null },
+  'Toiles':        { cat: 'Toiles',        sousCat: null },
+};
+
+function openListeWithCat(key) {
+  openModal('liste');
+  const map = COL_TO_CAT[key];
+  if (!map) return;
+  const catBtn = [...document.querySelectorAll('.ltog-cat')].find(b => b.dataset.cat === map.cat);
+  if (catBtn) {
+    toggleListeCat(map.cat);
+    if (map.sousCat) {
+      const typeBtn = [...document.querySelectorAll('.ltog-type')].find(b => b.dataset.type === map.sousCat);
+      if (typeBtn) toggleListeType(map.sousCat);
+    }
+  }
+  if (['LED','HMI','TUNG'].includes(map.sousCat)) {
+    document.getElementById('l-cats-group').style.display = 'none';
+    document.getElementById('l-types-group').style.display = 'none';
+    updateProjDropdown(map.sousCat);
+  } else {
+    document.getElementById('l-cats-group').style.display = '';
+  }
+}
+
+function saveListeDates() {} // deprecated — dates now set via film modal
+
+window._chargDates = [];
+
+function addChargDate() {
+  const val = document.getElementById('f-charg-pick').value;
+  if (!val) return;
+  if (!window._chargDates.includes(val)) {
+    window._chargDates.push(val);
+    window._chargDates.sort();
+  }
+  document.getElementById('f-charg-pick').value = '';
+  renderChargList();
+}
+
+function removeChargDate(val) {
+  window._chargDates = window._chargDates.filter(d => d !== val);
+  renderChargList();
+}
+
+function renderChargList() {
+  const el = document.getElementById('f-charg-list');
+  if (!el) return;
+  if (!window._chargDates.length) { el.innerHTML = '<span style="color:#aaa;font-size:12px;">Aucune date ajoutée</span>'; return; }
+  el.innerHTML = window._chargDates.map(d =>
+    `<span style="display:inline-flex;align-items:center;gap:5px;background:#f5f3f0;border:1px solid #e0ddd8;border-radius:20px;padding:4px 10px;font-size:12px;font-weight:500;">
+      ${fmtDate(d)}
+      <button type="button" onclick="removeChargDate('${d}')" style="background:none;border:none;color:#aaa;cursor:pointer;font-size:14px;line-height:1;padding:0;">×</button>
+    </span>`
+  ).join('');
+}
+
+function renderListe() {
+  updateAllSubs();
+  const list = listeForCurrentFilm();
+  const grid = document.getElementById('liste-grid');
+  const film = currentFilmData();
+  const datesEl = document.getElementById('topbar-sub-liste-dates');
+  if (datesEl) {
+    const dates = film?.charg ? film.charg.split(',').filter(Boolean) : [];
+    const charg = dates.length ? `Chargements · ${dates.map(fmtDate).join(', ')}` : '';
+    const rendu = film?.rendu ? 'Rendus · ' + fmtDate(film.rendu) : '';
+    datesEl.textContent = [charg, rendu].filter(Boolean).join('  —  ');
+  }
+
+  // Group by column key
+  const byCol = {};
+  LISTE_COLS.forEach(c => byCol[c.key] = []);
+  list.forEach(l => {
+    const k = listeColKey(l);
+    if (byCol[k]) byCol[k].push(l);
+    else { if (!byCol['AUTRES']) byCol['AUTRES'] = []; byCol['AUTRES'].push(l); }
+  });
+
+  const svgEdit = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M9 2l2 2-7 7H2V9L9 2Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>`;
+  const svgDel  = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 3h11M4 3V2h5v1M5 6v4M8 6v4M2 3l1 9h7l1-9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+  // Split into two rows: first 4+Pieds+Grip = row1, rest = row2
+  const row1Keys = ['LED','HMI','TUNG','AUTRES'];
+  const row2Keys = ['Pieds','Grip','Electricité','CRMX'];
+  const row3Keys = ['Accessoires','Cadres','Toiles','Consommables'];
+
+  function renderRow(keys, extraClass='') {
+    return `<div class="lg-row ${extraClass}">${keys.map(key => {
+      const col = LISTE_COLS.find(c => c.key === key);
+      const items = byCol[key] || [];
+      const rows = items.length ? items.map(l => `
+        <div class="lg-item">
+          <span class="lg-item-qt">${l.qt}</span>
+          <span class="lg-item-nom lg-item-link" onclick="editListe('${l.id}')">${esc(l.nom)}</span>
+          ${l.notes ? `<span class="lg-item-notes" style="margin-left:auto;">${esc(l.notes)}</span>` : ''}
+        </div>`).join('') : ``;
+      return `<div class="lg-col">
+        <div class="lg-col-head lg-col-head-btn" onclick="openListeWithCat('${key}')">${col.label}</div>
+        <div class="lg-col-body">${rows}</div>
+      </div>`;
+    }).join('')}</div>`;
+  }
+
+  grid.innerHTML = renderRow(row1Keys) + renderRow(row2Keys) + renderRow(row3Keys, 'lg-row-4');
+}
+
+const LISTE_SOUS_CATS = {
+  'Projecteurs': ['HMI', 'TUNG', 'LED', 'AUTRES'],
+  'Pieds': ['16', '28'],
+  'Grip': ['Accroche', 'Rotules'],
+  'Electricité': ['Ligne', 'Tono', 'Multi'],
+  'CRMX': ['Rx', 'Tx', 'Data', 'iPad'],
+  'Toiles': ['Rebond', 'Diffusion', 'Atténuation'],
+};
+
+// Projecteurs data from xlsx
+const PROJ_DATA = {
+  'HMI': {
+    'ARRI': ['ARRI FRESNEL 12/18K','ARRI FRESNEL COMPACT 12K','ARRI FRESNEL COMPACT 200W','ARRI FRESNEL COMPACT 6K','ARRI FRESNEL COMPACT THEATRE 2,5K','ARRI FRESNEL COMPACT THEATRE 4K','ARRI M 12/18K','ARRI M 1800W','ARRI M 4K','ARRI M 800W','ARRI M 9K','ARRI POCKET PAR 125W','ARRI POCKET PAR 200W','ARRI POCKET PAR 400W','ARRI SUN 12K','ARRI SUN 1800W','ARRI SUN 200W','ARRI SUN 4K','ARRI SUN 575W','ARRI SUN 6K','ARRI TRUE BLUE D 1200W','ARRI TRUE BLUE D 2,5K','ARRI TRUE BLUE D 4K','ARRI TRUE BLUE D 575W','ARRI X 1200W','ARRI X 4/2,5K','ARRI X 575W','ARRI X 6K'],
+    'K5600': ['ALPHA 1600W','ALPHA 18K','ALPHA 200W','ALPHA 4K','ALPHA 6/9K','Black Jack 400W','Joker 1200W','JOKER BUG 1600W','JOKER BUG 200W','JOKER BUG 400W','JOKER BUG 800W'],
+    'MOLE RICHARDSON': ['MOLEBEAM 12K','MOLEBEAM 6K','MOLEBEAM 2,5/4K','MOLEBEAM 1200W'],
+  },
+  'TUNG': {
+    'ARRI': ['ARRI FRESNEL TUNG 150W','ARRI FRESNEL TUNG 300W','ARRI FRESNEL TUNG 650W','ARRILITE PLUS 2K','ARRILITE PLUS 800W','JUNIOR 1K','JUNIOR 2K','JUNIOR 300W','JUNIOR 5K','RUBY 7 - 8.4K','SOFTLIGHT 2,5K','SOFTLIGHT 5K','STUDIO T 12k','STUDIO T 24k','TRUE BLUE TUNG 1K','TRUE BLUE TUNG 2K','TRUE BLUE TUNG 5K'],
+    'K5600': ['DOUILLE E40','BUGLITE 2K','MOLE RICHARDSON','MOLEBEAM 20K','MOLEBEAM 10K','MOLEBEAM 5K','MOLEBEAM 2K','SOFLITE 650W','SOFLITE 1K','SOFLITE 2K','SOFLITE 4K'],
+    'AUTRES': ['LUCIOLE MEGA 6K','LUCIOLE 2K COMPACT','LUCIOLE 1K CLASSIC','LUCIOLE 1K COMPACT','LUCIOLE NANO 200W','LUCIOLE PICO 100W','DEDO 150W','AREA 48','MINIBRUT','MAXIBRUT','PAR 64','BOULE 1K','BOULE 2','BOULE 5K','AIRCRAFT'],
+  },
+  'LED': {
+    'NANLUX': ['EVOKE 5K','EVOKE 2.4K','EVOKE 1.2K'],
+    'DMG': ['SL1 MAXI','SL1 MIX','SL1 SWITCH'],
+  },
+};
+
+// Flat list of models for current proj type (used by autocomplete)
+let _projModels = [];
+let _projDropIdx = -1;
+
+function updateProjDropdown(type) {
+  const group = document.getElementById('l-proj-group');
+  const brands = PROJ_DATA[type];
+  if (!brands) { group.style.display = 'none'; _projModels = []; return; }
+  // Build flat list: [{brand, model}]
+  _projModels = [];
+  Object.entries(brands).forEach(([brand, models]) => {
+    models.forEach(m => _projModels.push({ brand, model: m }));
+  });
+  group.style.display = '';
+  document.getElementById('l-proj-ref').value = '';
+  document.getElementById('proj-ref-drop').style.display = 'none';
+}
+
+function projRefInput(val) {
+  const drop = document.getElementById('proj-ref-drop');
+  _projDropIdx = -1;
+  if (!val.trim()) { drop.style.display = 'none'; return; }
+  const q = val.toLowerCase();
+  const matches = _projModels.filter(p => p.model.toLowerCase().includes(q));
+  if (!matches.length) { drop.style.display = 'none'; return; }
+  drop.innerHTML = matches.map((p, i) =>
+    `<div data-idx="${i}" style="padding:9px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0ede8;"
+      onmousedown="projRefSelect(${i})"
+      onmouseover="projRefHL(${i})">`+
+      `<span style="font-weight:600;">${p.model}</span>`+
+      `<span style="color:#aaa;font-size:11px;margin-left:6px;">${p.brand}</span>`+
+    `</div>`
+  ).join('');
+  drop.style.display = '';
+  drop._matches = matches;
+}
+
+function projRefHL(i) {
+  _projDropIdx = i;
+  document.querySelectorAll('#proj-ref-drop > div').forEach((el, j) => {
+    el.style.background = j === i ? '#faf9f7' : '';
+  });
+}
+
+function projRefSelect(i) {
+  const drop = document.getElementById('proj-ref-drop');
+  const matches = drop._matches || [];
+  if (matches[i]) document.getElementById('l-proj-ref').value = matches[i].model;
+  drop.style.display = 'none';
+  _projDropIdx = -1;
+}
+
+function projRefHide() {
+  setTimeout(() => { document.getElementById('proj-ref-drop').style.display = 'none'; }, 160);
+}
+
+function projRefKey(e) {
+  const drop = document.getElementById('proj-ref-drop');
+  const items = drop.querySelectorAll('div');
+  if (!items.length) return;
+  if (e.key === 'ArrowDown') { e.preventDefault(); projRefHL(Math.min(_projDropIdx + 1, items.length - 1)); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); projRefHL(Math.max(_projDropIdx - 1, 0)); }
+  else if (e.key === 'Enter' && _projDropIdx >= 0) { e.preventDefault(); projRefSelect(_projDropIdx); }
+  else if (e.key === 'Escape') { drop.style.display = 'none'; }
+}
+
+function toggleListeCat(cat) {
+  const btns = document.querySelectorAll('.ltog-cat');
+  const isOn = [...btns].find(b => b.dataset.cat === cat)?.classList.contains('on');
+  btns.forEach(b => b.classList.remove('on'));
+  const typesGroup = document.getElementById('l-types-group');
+  const typesEl = document.getElementById('l-types');
+  document.getElementById('l-proj-group').style.display = 'none';
+  document.getElementById('l-taille-group').style.display = 'none';
+  document.getElementById('l-cadre-group').style.display = 'none';
+  document.querySelectorAll('.ltog-size').forEach(b => b.classList.remove('on'));
+  if (isOn) {
+    typesGroup.style.display = 'none';
+    typesEl.innerHTML = '';
+    return;
+  }
+  [...btns].find(b => b.dataset.cat === cat).classList.add('on');
+  const types = LISTE_SOUS_CATS[cat] || [];
+  typesEl.innerHTML = types.map(t =>
+    `<button type="button" class="ltog-type" data-type="${t}" onclick="toggleListeType('${t}')">${t}</button>`
+  ).join('');
+  typesGroup.style.display = types.length ? '' : 'none';
+  document.getElementById('l-cadre-group').style.display = cat === 'Cadres' ? '' : 'none';
+  if (cat === 'Toiles') document.getElementById('l-taille-group').style.display = '';
+}
+
+const TOILES_SIZES = ['2x2m','3x3m','4x4m','4x6m','6x6m'];
+
+function toggleListeType(type) {
+  document.querySelectorAll('.ltog-type').forEach(b => b.classList.remove('on'));
+  [...document.querySelectorAll('.ltog-type')].find(b => b.dataset.type === type)?.classList.add('on');
+  updateProjDropdown(type);
+  // Show size buttons for Toiles types
+  const sizeGroup = document.getElementById('l-taille-group');
+  if (sizeGroup) {
+    const cat = document.querySelector('.ltog-cat.on')?.dataset.cat;
+    if (cat === 'Toiles') {
+      sizeGroup.style.display = '';
+    } else {
+      sizeGroup.style.display = 'none';
+    }
+  }
+}
+
+function toggleListeSize(size) {
+  document.querySelectorAll('.ltog-size').forEach(b => b.classList.remove('on'));
+  [...document.querySelectorAll('.ltog-size')]
+    .find(b => b.dataset.size === size && b.offsetParent !== null)
+    ?.classList.add('on');
+}
+
+function updateListeSousCategories() {} // kept for compat
+
+function saveListe() {
+  const catBtn = document.querySelector('.ltog-cat.on');
+  const typeBtn = document.querySelector('.ltog-type.on');
+  if (!catBtn) { showToast('Choisissez une catégorie'); return; }
+  const cat = catBtn.dataset.cat;
+  const hasSousTypes = !!(LISTE_SOUS_CATS[cat] && LISTE_SOUS_CATS[cat].length);
+  if (hasSousTypes && !typeBtn) { showToast('Choisissez un type'); return; }
+  const sousCat = typeBtn ? typeBtn.dataset.type : '';
+  const projGroup = document.getElementById('l-proj-group');
+  const projRef = document.getElementById('l-proj-ref');
+  const projVisible = projGroup && projGroup.style.display !== 'none';
+  const projVal = projVisible ? projRef.value.trim() : '';
+  if (projVisible && PROJ_DATA[sousCat] && !projVal) { showToast('Choisissez un projecteur'); return; }
+  const sizeBtn = document.querySelector('.ltog-size.on');
+  const sizeVal = sizeBtn ? sizeBtn.dataset.size : '';
+  const sizeLabel = sizeVal ? sizeVal.replace(/^c-/, '').replace('x', '/') : '';
+  const nom = projVal ? projVal
+    : sizeVal ? (cat === 'Cadres' ? 'Cadre ' + sizeLabel : sousCat + ' ' + sizeLabel)
+    : sousCat ? (cat + ' — ' + sousCat)
+    : cat;
+  const id = document.getElementById('edit-liste-id').value;
+  const data = {
+    filmId: state.currentFilm,
+    nom,
+    cat,
+    sousCat,
+    projRef: projVal,
+    qt: parseInt(document.getElementById('l-qt').value) || 1,
+    notes: document.getElementById('l-notes').value.trim(),
+  };
+  if (id) {
+    const l = state.liste.find(l => l.id === id);
+    if (l) Object.assign(l, data);
+    showToast('Modifié');
+  } else {
+    state.liste.push({ id: uid(), ...data });
+    showToast('Ajouté à la liste');
+  }
+  saveToStorage();
+  closeModal('modal-liste');
+  renderListe();
+}
+
+function deleteListe() {
+  const id = document.getElementById('edit-liste-id').value;
+  if (!id) return;
+  const l = state.liste.find(l => l.id === id);
+  closeModal('modal-liste');
+  confirmDelete('liste', id, l ? l.nom : '');
+}
+
+function editListe(id) {
+  const l = state.liste.find(l => l.id === id);
+  if (!l) return;
+  document.getElementById('edit-liste-id').value = l.id;
+  document.getElementById('l-delete-btn').style.display = 'inline-flex';
+  document.querySelectorAll('.ltog-cat').forEach(b => b.classList.remove('on'));
+  document.getElementById('l-types-group').style.display = 'none';
+  document.getElementById('l-proj-group').style.display = 'none';
+  if (l.cat) {
+    toggleListeCat(l.cat);
+    if (l.sousCat) {
+      const tb = [...document.querySelectorAll('.ltog-type')].find(b => b.dataset.type === l.sousCat);
+      if (tb) tb.classList.add('on');
+      updateProjDropdown(l.sousCat);
+      if (l.projRef) document.getElementById('l-proj-ref').value = l.projRef;
+    }
+  }
+  if (['LED','HMI','TUNG'].includes(l.sousCat)) {
+    document.getElementById('l-cats-group').style.display = 'none';
+    document.getElementById('l-types-group').style.display = 'none';
+  } else {
+    document.getElementById('l-cats-group').style.display = '';
+  }
+  document.getElementById('l-cadre-group').style.display = l.cat === 'Cadres' ? '' : 'none';
+  document.getElementById('l-qt').value = l.qt;
+  document.getElementById('l-notes').value = l.notes || '';
+  document.getElementById('modal-liste').classList.add('open');
+}
+
+/* ═══════════════════════════════════════════════
+   CALENDRIER — VUE MENSUELLE (style Calendrier Apple)
+═══════════════════════════════════════════════ */
+let _calYear   = null;
+let _calMonth  = null; // 0-based
+let _calFilter = 'ponctuels'; // kept for compat, actual state read from checkboxes
+
+const CAL_COLORS = [
+  '#e84040','#3b82f6','#22c55e','#f59e0b',
+  '#7f77dd','#f97316','#ec4899','#14b8a6',
+];
+const CAL_DECOR_COLORS = [
+  '#8b5cf6','#0891b2','#65a30d','#d97706',
+  '#db2777','#0284c7','#16a34a','#ca8a04',
+];
+const CAL_EQUIPE_COLORS = [
+  '#0f766e','#b45309','#1d4ed8','#7c3aed',
+  '#be185d','#15803d','#c2410c','#1e40af',
+];
+
+function setCalFilter() {
+  // Update label styles based on checkbox state
+  ['ponctuels','decors','equipe'].forEach(k => {
+    const chk   = document.getElementById('cal-chk-' + k);
+    const label = document.getElementById('cal-filter-' + k);
+    if (!chk || !label) return;
+    if (chk.checked) {
+      label.style.background   = '#e84040';
+      label.style.color        = '#fff';
+      label.style.borderColor  = '#e84040';
+    } else {
+      label.style.background   = 'transparent';
+      label.style.color        = '#888';
+      label.style.borderColor  = '#e0ddd8';
+    }
+  });
+  renderCalendar();
+}
+
+function calChecked(k) {
+  const el = document.getElementById('cal-chk-' + k);
+  return el ? el.checked : false;
+}
+
+function calMonthNav(dir) {
+  _calMonth += dir;
+  if (_calMonth > 11) { _calMonth = 0;  _calYear++; }
+  if (_calMonth < 0)  { _calMonth = 11; _calYear--; }
+  renderCalendar();
+}
+
+function calMonthToday() {
+  const now = new Date();
+  _calYear  = now.getFullYear();
+  _calMonth = now.getMonth();
+  renderCalendar();
+}
+
+function calDayKey(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+// Returns all active days for a decor as a Set of dateKeys
+function decorActiveDays(d) {
+  const days = new Set();
+  if (d.dateMode === 'periode' && d.dateDebut) {
+    const s = new Date(d.dateDebut + 'T00:00:00');
+    const e = d.dateFin ? new Date(d.dateFin + 'T00:00:00') : s;
+    for (let cur = new Date(s); cur <= e; cur.setDate(cur.getDate() + 1)) {
+      days.add(calDayKey(new Date(cur)));
+    }
+  } else if (d.dateMode === 'isolees' && d.datesIsolees) {
+    d.datesIsolees.forEach(dt => days.add(dt));
+  }
+  return days;
+}
+
+function renderCalendar() {
+  updateAllSubs();
+  const film      = currentFilmData();
+  const ponctuels = ponctuelsForCurrentFilm().filter(p => p.depart && p.retour);
+  const decors    = decorsForCurrentFilm().filter(d =>
+    (d.dateMode === 'periode' && d.dateDebut) ||
+    (d.dateMode === 'isolees' && d.datesIsolees && d.datesIsolees.length > 0)
+  );
+  const equipe    = equipeForCurrentFilm().filter(m => m.du);
+  const container = document.getElementById('cal-month-view');
+  const empty     = document.getElementById('cal-empty');
+
+  const showP = calChecked('ponctuels');
+  const showD = calChecked('decors');
+  const showE = calChecked('equipe');
+  const hasContent = (showP && ponctuels.length > 0) || (showD && decors.length > 0) || (showE && equipe.length > 0);
+
+  if (!film || !film.du || !film.au || !hasContent) {
+    empty.classList.remove('hidden');
+    container.innerHTML = '';
+    document.getElementById('cal-day-detail').classList.add('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  // Init month
+  if (_calYear === null) {
+    const filmStart = new Date(film.du + 'T00:00:00');
+    const now = new Date();
+    const ref = now >= filmStart ? now : filmStart;
+    _calYear  = ref.getFullYear();
+    _calMonth = ref.getMonth();
+  }
+
+  // Month label
+  const monthLabel = new Date(_calYear, _calMonth, 1)
+    .toLocaleDateString('fr-FR', { month:'long', year:'numeric' });
+  document.getElementById('cal-month-label').textContent =
+    monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+
+  const filmStart = new Date(film.du + 'T00:00:00');
+  const filmEnd   = new Date(film.au + 'T00:00:00');
+
+  // Color maps
+  const pColorMap = {};
+  ponctuels.forEach((p, i) => { pColorMap[p.id] = CAL_COLORS[i % CAL_COLORS.length]; });
+  const dColorMap = {};
+  decors.forEach((d, i) => { dColorMap[d.id] = CAL_DECOR_COLORS[i % CAL_DECOR_COLORS.length]; });
+  const eColorMap = {};
+  equipe.forEach((m, i) => { eColorMap[m.id] = CAL_EQUIPE_COLORS[i % CAL_EQUIPE_COLORS.length]; });
+
+  // Precompute decor active days
+  const decorDayMap = {};
+  decors.forEach(d => {
+    decorActiveDays(d).forEach(key => {
+      if (!decorDayMap[key]) decorDayMap[key] = [];
+      decorDayMap[key].push(d);
+    });
+  });
+
+  // Precompute equipe active days
+  const equipeDayMap = {};
+  equipe.forEach(m => {
+    const s = new Date(m.du + 'T00:00:00');
+    const e = m.au ? new Date(m.au + 'T00:00:00') : s;
+    for (let cur = new Date(s); cur <= e; cur.setDate(cur.getDate() + 1)) {
+      const key = calDayKey(new Date(cur));
+      if (!equipeDayMap[key]) equipeDayMap[key] = [];
+      equipeDayMap[key].push(m);
+    }
+  });
+
+  // Grid bounds
+  const firstDay  = new Date(_calYear, _calMonth, 1);
+  const lastDay   = new Date(_calYear, _calMonth + 1, 0);
+  const gridStart = new Date(firstDay);
+  const dow = gridStart.getDay();
+  gridStart.setDate(gridStart.getDate() - (dow === 0 ? 6 : dow - 1));
+  const gridEnd = new Date(lastDay);
+  const dowEnd = gridEnd.getDay();
+  if (dowEnd !== 0) gridEnd.setDate(gridEnd.getDate() + (7 - dowEnd));
+
+  // Ponctuel daymap
+  const pDayMap = {};
+  for (let d = new Date(gridStart); d <= gridEnd; d.setDate(d.getDate() + 1)) {
+    const key = calDayKey(d);
+    pDayMap[key] = showP ? ponctuels.filter(p => {
+      const s = new Date(p.depart + 'T00:00:00');
+      const e = new Date(p.retour + 'T00:00:00');
+      return d >= s && d <= e;
+    }) : [];
+  }
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const DAY_NAMES = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+
+  // ── Header
+  let html = `<div style="display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid #f0ede8;">`;
+  DAY_NAMES.forEach((n, i) => {
+    const isWE = i >= 5;
+    html += `<div style="text-align:center;padding:8px 0;font-size:11px;font-weight:500;color:${isWE ? '#ccc' : '#aaa'};letter-spacing:0.4px;">${n}</div>`;
+  });
+  html += `</div>`;
+
+  // ── Grid
+  html += `<div style="display:grid;grid-template-columns:repeat(7,1fr);">`;
+
+  for (let d = new Date(gridStart); d <= gridEnd; d.setDate(d.getDate() + 1)) {
+    const key      = calDayKey(d);
+    const isToday  = d.getTime() === today.getTime();
+    const isCurMon = d.getMonth() === _calMonth;
+    const isWE     = d.getDay() === 0 || d.getDay() === 6;
+    const inFilm   = d >= filmStart && d <= filmEnd;
+    const pts      = pDayMap[key] || [];
+    const decs     = showD ? (decorDayMap[key]  || []) : [];
+    const mems     = showE ? (equipeDayMap[key] || []) : [];
+    const MAX_SHOW = 3;
+    const total    = pts.length + decs.length + mems.length;
+
+    html += `<div onclick="calDayClick('${key}')" style="
+      min-height:72px;padding:6px 4px 4px;cursor:pointer;
+      border-right:1px solid #f7f5f2;border-bottom:1px solid #f7f5f2;
+      background:${isWE && isCurMon ? '#faf9f7' : '#fff'};
+      opacity:${isCurMon ? '1' : '0.35'};
+      transition:background 0.1s;
+    " onmouseover="this.style.background='#f5f3f0'" onmouseout="this.style.background='${isWE && isCurMon ? '#faf9f7' : '#fff'}'">
+      <div style="text-align:center;margin-bottom:4px;">
+        <span style="
+          display:inline-flex;align-items:center;justify-content:center;
+          width:24px;height:24px;border-radius:50%;font-size:13px;
+          font-weight:${isToday ? '700' : '400'};
+          background:${isToday ? '#e84040' : 'transparent'};
+          color:${isToday ? '#fff' : inFilm ? '#1a1a1a' : '#aaa'};
+        ">${d.getDate()}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:2px;">`;
+
+    let shown = 0;
+    pts.slice(0, MAX_SHOW).forEach(p => {
+      const isFirst = calDayKey(new Date(p.depart + 'T00:00:00')) === key;
+      html += `<div style="background:${pColorMap[p.id]};border-radius:3px;padding:1px 5px;font-size:10px;color:#fff;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.5;">${isFirst ? esc(p.nom) : '· ' + esc(p.nom)}</div>`;
+      shown++;
+    });
+    decs.slice(0, Math.max(0, MAX_SHOW - shown)).forEach(dec => {
+      html += `<div style="background:${dColorMap[dec.id]};border-radius:4px;padding:2px 6px;font-size:13px;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.6;text-transform:uppercase;">🏠 ${esc(dec.nom)}</div>`;
+      shown++;
+    });
+    mems.slice(0, Math.max(0, MAX_SHOW - shown)).forEach(m => {
+      const initials = (m.prenom?.[0]||'') + (m.nom?.[0]||'');
+      const label = [m.prenom, m.nom].filter(Boolean).join(' ');
+      html += `<div style="background:${eColorMap[m.id]};border-radius:3px;padding:1px 5px;font-size:10px;color:#fff;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.5;">👤 ${esc(label)}</div>`;
+      shown++;
+    });
+
+    if (total > MAX_SHOW) {
+      html += `<div style="font-size:10px;color:#aaa;padding-left:4px;">+${total - MAX_SHOW} autre${total - MAX_SHOW > 1 ? 's' : ''}</div>`;
+    }
+
+    html += `</div></div>`;
+  }
+
+  html += `</div>`;
+  container.innerHTML = html;
+
+  window._calState = { ponctuels, decors, equipe, pColorMap, dColorMap, eColorMap, equipeDayMap };
+}
+
+function calDayClick(dateStr) {
+  const { ponctuels, decors, equipe, pColorMap, dColorMap, eColorMap, equipeDayMap } = window._calState || {};
+  if (!ponctuels) return;
+  const showP = calChecked('ponctuels');
+  const showD = calChecked('decors');
+  const showE = calChecked('equipe');
+
+  const d = new Date(dateStr + 'T00:00:00');
+
+  const pts  = showP ? ponctuels.filter(p => {
+    const s = new Date(p.depart + 'T00:00:00');
+    const e = new Date(p.retour + 'T00:00:00');
+    return d >= s && d <= e;
+  }) : [];
+  const decs = showD ? decors.filter(dec => decorActiveDays(dec).has(dateStr)) : [];
+  const mems = showE ? (equipeDayMap?.[dateStr] || []) : [];
+
+  const detail = document.getElementById('cal-day-detail');
+  const title  = document.getElementById('cal-detail-title');
+  const list   = document.getElementById('cal-detail-list');
+
+  title.textContent = d.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
+  title.style.textTransform = 'capitalize';
+
+  if (pts.length === 0 && decs.length === 0 && mems.length === 0) {
+    detail.classList.add('hidden');
+    return;
+  }
+
+  const multiSection = [pts.length > 0, decs.length > 0, mems.length > 0].filter(Boolean).length > 1;
+  let html = '';
+
+  if (pts.length > 0) {
+    if (multiSection) html += `<div style="font-size:10px;font-weight:700;color:#e84040;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Ponctuels</div>`;
+    html += pts.map(p => `
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f7f5f2;">
+        <div style="width:10px;height:10px;border-radius:50%;background:${pColorMap[p.id]};flex-shrink:0;"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;">${esc(p.qt)}× ${esc(p.nom)}</div>
+          ${p.type  ? `<div style="font-size:11px;color:#aaa;">${esc(p.type)}</div>` : ''}
+          ${p.decor ? `<div style="font-size:11px;color:#aaa;">📍 ${esc(p.decor)}</div>` : ''}
+        </div>
+        <div style="font-size:11px;color:#ccc;white-space:nowrap;">${fmtDate(p.depart)} → ${fmtDate(p.retour)}</div>
+      </div>`).join('');
+  }
+
+  if (decs.length > 0) {
+    if (multiSection) html += `<div style="font-size:10px;font-weight:700;color:#8b5cf6;text-transform:uppercase;letter-spacing:0.5px;margin:${pts.length ? '10px' : '0'} 0 6px;">Décors</div>`;
+    html += decs.map(dec => {
+      let dateInfo = '';
+      if (dec.dateMode === 'periode' && dec.dateDebut) {
+        dateInfo = fmtDate(dec.dateDebut) + (dec.dateFin ? ' → ' + fmtDate(dec.dateFin) : '');
+      } else if (dec.datesIsolees) {
+        dateInfo = dec.datesIsolees.map(fmtDate).join(', ');
+      }
+      return `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f7f5f2;">
+          <div style="width:10px;height:10px;border-radius:3px;background:${dColorMap[dec.id]};flex-shrink:0;"></div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;">🏠 ${esc(dec.nom)}</div>
+            ${dec.type    ? `<div style="font-size:11px;color:#aaa;">${esc(dec.type)}</div>` : ''}
+            ${dec.adresse ? `<div style="font-size:11px;color:#aaa;">📍 ${esc(dec.adresse)}</div>` : ''}
+          </div>
+          <div style="font-size:11px;color:#ccc;text-align:right;">${dateInfo}</div>
+        </div>`;
+    }).join('');
+  }
+
+  if (mems.length > 0) {
+    if (multiSection) html += `<div style="font-size:10px;font-weight:700;color:#0f766e;text-transform:uppercase;letter-spacing:0.5px;margin:${(pts.length || decs.length) ? '10px' : '0'} 0 6px;">Équipe (${mems.length})</div>`;
+    html += mems.map(m => {
+      const fullName = [m.prenom, m.nom].filter(Boolean).join(' ');
+      const avatar = m.photo
+        ? `<img src="${m.photo}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
+        : `<div style="width:32px;height:32px;border-radius:50%;background:${eColorMap[m.id]};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;">${(m.prenom?.[0]||'')+(m.nom?.[0]||'')}</div>`;
+      return `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f7f5f2;">
+          ${avatar}
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;">${esc(fullName)}</div>
+            ${m.poste ? `<div style="font-size:11px;color:#aaa;">${esc(m.poste)}</div>` : ''}
+            ${m.tel   ? `<div style="font-size:11px;color:#aaa;"><a href="tel:${esc(m.tel)}" style="color:#aaa;">${esc(m.tel)}</a></div>` : ''}
+          </div>
+          <div style="font-size:11px;color:#ccc;white-space:nowrap;">${fmtDate(m.du)}${m.au ? ' → ' + fmtDate(m.au) : ''}</div>
+        </div>`;
+    }).join('');
+  }
+
+  list.innerHTML = html;
+  detail.classList.remove('hidden');
+  detail.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+/* ═══════════════════════════════════════════════
+   BUDGET
+═══════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════
+   DELETE
+═══════════════════════════════════════════════ */
+function confirmDelete(type, id, name) {
+  state.pendingDelete = { type, id };
+  document.getElementById('confirm-msg').textContent = `Supprimer "${name}" ?`;
+  document.getElementById('confirm-ok').onclick = doDelete;
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  state.pendingDelete = null;
+}
+
+function doDelete() {
+  const { type, id } = state.pendingDelete;
+  if (type === 'ponctuel') {
+    state.ponctuels = state.ponctuels.filter(p => p.id !== id);
+    showToast('Ponctuel supprimé');
+  } else if (type === 'liste') {
+    state.liste = state.liste.filter(l => l.id !== id);
+    showToast('Supprimé de la liste');
+  } else if (type === 'decor') {
+    state.decors = state.decors.filter(d => d.id !== id);
+    showToast('Décor supprimé');
+  } else if (type === 'membre') {
+    state.equipe = (state.equipe || []).filter(m => m.id !== id);
+    showToast('Membre supprimé');
+  } else if (type === 'film') {
+    state.films = state.films.filter(f => f.id !== id);
+    if (state.currentFilm === id) state.currentFilm = state.films[0]?.id || '';
+    showToast('Film supprimé');
+    renderSidebar();
+  }
+  saveToStorage();
+  closeConfirm();
+  renderAll();
+}
+
+/* ═══════════════════════════════════════════════
+   PDF EXPORT
+═══════════════════════════════════════════════ */
+function exportListePDF() {
+  const { jsPDF } = window.jspdf;
+  if (!jsPDF) { showToast('Chargement en cours, réessayez'); return; }
+
+  const film = currentFilmData();
+  const list = listeForCurrentFilm();
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const PW = 297, ML = 12, MR = 12, MT = 14;
+  const colW = (PW - ML - MR - 8) / 3; // 3 columns with 4mm gap each
+
+  // ── En-tête ──
+  const today = new Date().toLocaleDateString('fr-FR');
+  doc.setFontSize(8); doc.setFont(undefined, 'normal'); doc.setTextColor(80);
+  doc.text(`LISTE LUMIÈRE V1 · ${today}`, PW / 2, MT, { align: 'center' });
+
+  doc.setFontSize(16); doc.setFont(undefined, 'bold'); doc.setTextColor(0);
+  doc.text((film?.titre || '—').toUpperCase(), PW / 2, MT + 7, { align: 'center' });
+
+  // Ligne chargements / tournage / rendus
+  const y1 = MT + 13;
+  doc.setDrawColor(0); doc.setLineWidth(0.4);
+  doc.line(ML, y1, PW - MR, y1);
+  doc.setFontSize(7.5); doc.setFont(undefined, 'bold'); doc.setTextColor(0);
+  const chargDates = film?.charg ? film.charg.split(',').filter(Boolean).map(fmtDate).join(', ') : '—';
+  doc.text(`CHARGEMENTS : ${chargDates}`, ML, y1 + 4.5);
+  doc.text(`TOURNAGE : ${fmtDate(film?.du) || '—'} – ${fmtDate(film?.au) || '—'}`, PW / 2, y1 + 4.5, { align: 'center' });
+  doc.text(`RENDUS : ${fmtDate(film?.rendu) || '—'}`, PW - MR, y1 + 4.5, { align: 'right' });
+  doc.line(ML, y1 + 7, PW - MR, y1 + 7);
+
+  // DOP / Gaffer / DirProd
+  const y2 = y1 + 12;
+  doc.setFontSize(8); doc.setFont(undefined, 'bold'); doc.setTextColor(0);
+  doc.text('DOP : —', ML + colW * 0.5, y2, { align: 'center' });
+  doc.text(`GAFFER : ${(film?.chef || '—').toUpperCase()}`, ML + colW + 4 + colW * 0.5, y2, { align: 'center' });
+  doc.text('DIRPROD : —', ML + (colW + 4) * 2 + colW * 0.5, y2, { align: 'center' });
+  doc.setFont(undefined, 'normal'); doc.setFontSize(7); doc.setTextColor(100);
+  doc.text('—', ML + colW * 0.5, y2 + 4, { align: 'center' });
+  doc.text('—', ML + colW + 4 + colW * 0.5, y2 + 4, { align: 'center' });
+  doc.text('—', ML + (colW + 4) * 2 + colW * 0.5, y2 + 4, { align: 'center' });
+  doc.line(ML, y2 + 7, PW - MR, y2 + 7);
+
+  // ── Blocs par catégorie ──
+  const COLS_DEF = [
+    { keys: ['LED', 'HMI', 'TUNG', 'AUTRES'],  label: (k) => k === 'TUNG' ? 'TUNGSTÈNE' : k },
+    { keys: ['Pieds', 'Grip', 'Electricité', 'CRMX'], label: (k) => k === 'Pieds' ? 'PIED' : k === 'CRMX' ? 'DMX / CRMX' : k === 'Electricité' ? 'ÉLECTRICITÉ' : k.toUpperCase() },
+    { keys: ['Accessoires', 'Cadres', 'Toiles', 'Consommables'], label: (k) => k.toUpperCase() },
+  ];
+
+  // Group items
+  const byKey = {};
+  list.forEach(l => {
+    const k = l.cat === 'Projecteurs' ? (l.sousCat || 'AUTRES') : (l.cat || 'AUTRES');
+    if (!byKey[k]) byKey[k] = [];
+    byKey[k].push(l);
+  });
+
+  const ROW_H = 5.2;
+  const HEAD_H = 6;
+  const GAP = 3; // gap between blocks in same column
+
+  // Draw one block, returns final Y
+  function drawBlock(x, y, w, key, label) {
+    const items = byKey[key] || [];
+    if (items.length === 0) return y;
+    const blockH = HEAD_H + items.length * ROW_H + 1;
+
+    // Header
+    doc.setFillColor(17, 17, 17);
+    doc.rect(x, y, w, HEAD_H, 'F');
+    doc.setFontSize(7); doc.setFont(undefined, 'bold'); doc.setTextColor(255);
+    doc.text(label, x + w / 2, y + HEAD_H - 1.8, { align: 'center' });
+
+    // Rows
+    items.forEach((item, i) => {
+      const ry = y + HEAD_H + i * ROW_H;
+      doc.setFontSize(7.5); doc.setFont(undefined, 'bold'); doc.setTextColor(0);
+      doc.text(String(item.qt), x + 2, ry + ROW_H - 1.5);
+      doc.setFont(undefined, 'normal');
+      doc.text(item.nom, x + 8, ry + ROW_H - 1.5);
+      if (item.notes) {
+        doc.setTextColor(120);
+        const notesX = x + w * 0.55;
+        doc.text(item.notes, notesX, ry + ROW_H - 1.5, { maxWidth: w * 0.43 });
+        doc.setTextColor(0);
+      }
+    });
+
+    // Border
+    doc.setDrawColor(17, 17, 17); doc.setLineWidth(0.3);
+    doc.rect(x, y, w, blockH, 'S');
+
+    return y + blockH + GAP;
+  }
+
+  const bodyY = y2 + 10;
+  COLS_DEF.forEach((col, ci) => {
+    const x = ML + ci * (colW + 4);
+    let y = bodyY;
+    col.keys.forEach(key => {
+      y = drawBlock(x, y, colW, key, col.label(key));
+    });
+  });
+
+  // Footer
+  const pageH = doc.internal.pageSize.getHeight();
+  doc.setFontSize(7); doc.setTextColor(170);
+  doc.text(`Généré le ${today} — Canal 7 Prépa & Tournage`, PW / 2, pageH - 6, { align: 'center' });
+
+  doc.save(`liste-lumiere-${(film?.titre || 'film').replace(/\s+/g, '-').toLowerCase()}.pdf`);
+  showToast('PDF téléchargé');
+}
+
+function exportPDF() {
+  const { jsPDF } = window.jspdf;
+  if (!jsPDF) { showToast('Chargement en cours, réessayez'); return; }
+
+  const film = currentFilmData();
+  const list = ponctuelsForCurrentFilm();
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+  // Header
+  doc.setFontSize(20); doc.setFont(undefined, 'bold');
+  doc.setTextColor(0);
+  doc.text('Canal ', 14, 18);
+  doc.setTextColor(232, 64, 64);
+  doc.text('7', 14 + doc.getTextWidth('Canal '), 18);
+  doc.setTextColor(0);
+  doc.setFontSize(10); doc.setFont(undefined, 'normal'); doc.setTextColor(150);
+  doc.text('Prépa & Tournage', 14, 24);
+  doc.setTextColor(0);
+
+  if (film) {
+    doc.setFontSize(14); doc.setFont(undefined, 'bold');
+    doc.text(film.titre, 80, 18);
+    doc.setFontSize(9); doc.setFont(undefined, 'normal'); doc.setTextColor(100);
+    doc.text(`Production : ${film.prod || '—'}   Chef elec : ${film.chef || '—'}   Tournage : ${fmtDate(film.du)} – ${fmtDate(film.au)}`, 80, 25);
+    doc.setTextColor(0);
+  }
+
+  // Red line
+  doc.setDrawColor(232, 64, 64); doc.setLineWidth(0.8);
+  doc.line(14, 30, 283, 30);
+
+  // Ponctuels
+  doc.setFontSize(11); doc.setFont(undefined, 'bold');
+  doc.text('Les Ponctuels', 14, 38);
+
+  const pData = list.map(p => [
+    `${p.qt}×`,
+    p.nom,
+    p.type || '—',
+    p.decor || '—',
+    fmtDate(p.depart),
+    fmtDate(p.retour),
+    p.depart && p.retour ? daysBetween(p.depart, p.retour) + 'j' : '—',
+    p.notes || '',
+  ]);
+
+  doc.autoTable({
+    startY: 42,
+    head: [['Qt', 'Matériel', 'Type', 'Décor', 'Départ', 'Retour', 'Durée', 'Notes']],
+    body: pData.length ? pData : [['—','Aucun ponctuel','','','','','','']],
+    styles: { fontSize: 9, cellPadding: 3 },
+    headStyles: { fillColor: [232, 64, 64], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [250, 249, 247] },
+    columnStyles: { 0: { cellWidth: 10 }, 6: { cellWidth: 14 }, 7: { cellWidth: 40 } },
+  });
+
+  // Liste permanente
+  const listeData = listeForCurrentFilm();
+  if (listeData.length > 0) {
+    const y = doc.lastAutoTable.finalY + 10;
+    doc.setFontSize(11); doc.setFont(undefined, 'bold');
+    doc.text('Liste Base', 14, y);
+    doc.autoTable({
+      startY: y + 4,
+      head: [['Qt', 'Matériel', 'Notes']],
+      body: listeData.map(l => [`${l.qt}×`, l.nom, l.notes || '']),
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [30, 30, 30], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [250, 249, 247] },
+    });
+  }
+
+  // Footer
+  const pageH = doc.internal.pageSize.getHeight();
+  doc.setFontSize(8); doc.setTextColor(180);
+  doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')} — Canal 7 Prépa & Tournage`, 14, pageH - 8);
+
+  doc.save(`ponctuels-${(film?.titre || 'film').replace(/\s+/g,'-').toLowerCase()}.pdf`);
+  showToast('PDF téléchargé');
+}
+
+function openDecorsPDFModal() {
+  const decors = decorsForCurrentFilm();
+  if (decors.length === 0) { showToast('Aucun décor à exporter'); return; }
+  const list = document.getElementById('decors-pdf-list');
+  list.innerHTML = decors.map(d => {
+    const nbP = ponctuelsForCurrentFilm().filter(p => p.decor === d.nom).length;
+    const nbPh = (d.photos || []).length;
+    return `
+      <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0ede8;transition:background 0.1s;" onmouseover="this.style.background='#faf9f7'" onmouseout="this.style.background=''">
+        <input type="checkbox" class="decor-pdf-cb" value="${d.id}" checked style="width:15px;height:15px;accent-color:#e84040;flex-shrink:0;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(d.nom)}</div>
+          <div style="font-size:11px;color:#aaa;margin-top:1px;">${d.type ? esc(d.type) + ' · ' : ''}${nbP} ponctuel${nbP>1?'s':''} · ${nbPh} photo${nbPh>1?'s':''}</div>
+        </div>
+      </label>`;
+  }).join('');
+  document.getElementById('modal-decors-pdf').classList.add('open');
+}
+
+function toggleAllDecorsPDF(checked) {
+  document.querySelectorAll('.decor-pdf-cb').forEach(cb => cb.checked = checked);
+}
+
+function exportDecorsPDFSelected() {
+  const selected = [...document.querySelectorAll('.decor-pdf-cb:checked')].map(cb => cb.value);
+  if (selected.length === 0) { showToast('Sélectionnez au moins un décor'); return; }
+  closeModal('modal-decors-pdf');
+  const decors = decorsForCurrentFilm().filter(d => selected.includes(d.id));
+  exportDecorsPDF(decors);
+}
+
+function exportDecorsPDF(decors) {
+  const { jsPDF } = window.jspdf;
+  if (!jsPDF) { showToast('Chargement en cours, réessayez'); return; }
+
+  const film = currentFilmData();
+  const ponctuels = ponctuelsForCurrentFilm();
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+  // ── Header
+  doc.setFontSize(20); doc.setFont(undefined, 'bold');
+  doc.setTextColor(0);
+  doc.text('Canal ', 14, 18);
+  doc.setTextColor(232, 64, 64);
+  doc.text('7', 14 + doc.getTextWidth('Canal '), 18);
+  doc.setTextColor(0);
+  doc.setFontSize(10); doc.setFont(undefined, 'normal'); doc.setTextColor(150);
+  doc.text('Prépa & Tournage', 14, 24);
+  doc.setTextColor(0);
+
+  if (film) {
+    doc.setFontSize(14); doc.setFont(undefined, 'bold');
+    doc.text(film.titre, 80, 18);
+    doc.setFontSize(9); doc.setFont(undefined, 'normal'); doc.setTextColor(100);
+    doc.text(`Production : ${film.prod || '—'}   Chef elec : ${film.chef || '—'}   Tournage : ${fmtDate(film.du)} – ${fmtDate(film.au)}`, 80, 25);
+    doc.setTextColor(0);
+  }
+
+  // ── Red line
+  doc.setDrawColor(232, 64, 64); doc.setLineWidth(0.8);
+  doc.line(14, 30, 283, 30);
+
+  // ── Title
+  doc.setFontSize(11); doc.setFont(undefined, 'bold'); doc.setTextColor(0);
+  doc.text('Les Décors', 14, 38);
+
+  // ── Decors table
+  const dData = decors.map(d => {
+    const nbP = ponctuels.filter(p => p.decor === d.nom).length;
+    const renfortRefs = d.renforts || [];
+    const renfortNames = renfortRefs.map(ref => {
+      const m = (state.equipe || []).find(m => m.id === ref);
+      return m ? [m.prenom, m.nom].filter(Boolean).join(' ') : ref;
+    });
+    const renfortStr = renfortRefs.length > 0
+      ? renfortRefs.length + ' (' + renfortNames.join(', ') + ')'
+      : '—';
+    return [
+      d.nom,
+      d.type || '—',
+      d.adresse || '—',
+      d.jours ? d.jours + 'j' : '—',
+      nbP > 0 ? nbP + ' ponctuel' + (nbP > 1 ? 's' : '') : '—',
+      renfortStr,
+      d.notes || '',
+    ];
+  });
+
+  doc.autoTable({
+    startY: 42,
+    head: [['Décor', 'Type', 'Adresse', 'Jours', 'Ponctuels', 'Renforts', 'Notes']],
+    body: dData.length ? dData : [['—', 'Aucun décor', '', '', '', '', '']],
+    styles: { fontSize: 9, cellPadding: 3 },
+    headStyles: { fillColor: [232, 64, 64], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [250, 249, 247] },
+    columnStyles: {
+      0: { cellWidth: 44, fontStyle: 'bold' },
+      1: { cellWidth: 28 },
+      2: { cellWidth: 60 },
+      3: { cellWidth: 12 },
+      4: { cellWidth: 22 },
+      5: { cellWidth: 40 },
+    },
+  });
+
+  // ── Per-decor detail : ponctuels + photos
+  decors.forEach(d => {
+    const pts = ponctuels.filter(p => p.decor === d.nom);
+    const photos = d.photos || [];
+    const hasRenforts = (d.renforts || []).length > 0;
+    if (pts.length === 0 && photos.length === 0 && !hasRenforts) return;
+
+    // New page for each decor detail
+    doc.addPage();
+    let curY = 16;
+
+    // Decor header
+    doc.setFontSize(13); doc.setFont(undefined, 'bold'); doc.setTextColor(0);
+    doc.text(d.nom, 14, curY);
+    curY += 6;
+    if (d.adresse) {
+      doc.setFontSize(9); doc.setFont(undefined, 'normal'); doc.setTextColor(120);
+      doc.text(d.adresse, 14, curY);
+      curY += 5;
+    }
+    if (d.notes) {
+      doc.setFontSize(8); doc.setFont(undefined, 'italic'); doc.setTextColor(150);
+      doc.text(d.notes, 14, curY);
+      curY += 5;
+    }
+    doc.setTextColor(0);
+
+    // Separator line
+    doc.setDrawColor(232, 64, 64); doc.setLineWidth(0.5);
+    doc.line(14, curY, 283, curY);
+    curY += 6;
+
+    // Ponctuels sub-table
+    if (pts.length > 0) {
+      doc.setFontSize(9); doc.setFont(undefined, 'bold'); doc.setTextColor(50);
+      doc.text('Ponctuels associés', 14, curY);
+      curY += 2;
+      doc.autoTable({
+        startY: curY,
+        head: [['Qt', 'Matériel', 'Type', 'Départ', 'Retour', 'Durée', 'Notes']],
+        body: pts.map(p => [
+          `${p.qt}×`,
+          p.nom,
+          p.type || '—',
+          fmtDate(p.depart),
+          fmtDate(p.retour),
+          p.depart && p.retour ? daysBetween(p.depart, p.retour) + 'j' : '—',
+          p.notes || '',
+        ]),
+        styles: { fontSize: 8, cellPadding: 2.5 },
+        headStyles: { fillColor: [30, 30, 30], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [250, 249, 247] },
+        columnStyles: { 0: { cellWidth: 10 }, 5: { cellWidth: 14 } },
+      });
+      curY = doc.lastAutoTable.finalY + 8;
+    }
+
+    // Renforts
+    const renfortRefs = d.renforts || [];
+    if (renfortRefs.length > 0) {
+      const renfortNames = renfortRefs.map(ref => {
+        const m = (state.equipe || []).find(m => m.id === ref);
+        return m ? [m.prenom, m.nom].filter(Boolean).join(' ') : ref;
+      });
+      if (curY > 175) { doc.addPage(); curY = 16; }
+      doc.setFontSize(9); doc.setFont(undefined, 'bold'); doc.setTextColor(50);
+      doc.text(`Renforts (${renfortRefs.length})`, 14, curY);
+      curY += 2;
+      doc.autoTable({
+        startY: curY,
+        head: [['#', 'Nom du renfort']],
+        body: renfortNames.map((name, i) => [i + 1, name]),
+        styles: { fontSize: 8, cellPadding: 2.5 },
+        headStyles: { fillColor: [185, 28, 28], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [254, 242, 242] },
+        columnStyles: { 0: { cellWidth: 10 } },
+      });
+      curY = doc.lastAutoTable.finalY + 8;
+    }
+
+    // Photos grid
+    if (photos.length > 0) {
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const margin = 14;
+      const cols = 3;
+      const gap = 4;
+      const imgW = (pageW - margin * 2 - gap * (cols - 1)) / cols;
+      const imgH = imgW * 0.65;
+
+      doc.setFontSize(9); doc.setFont(undefined, 'bold'); doc.setTextColor(50);
+      doc.text(`Photos (${photos.length})`, margin, curY);
+      curY += 4;
+
+      let col = 0;
+      photos.forEach((ph, i) => {
+        // New page if needed
+        if (curY + imgH > pageH - 14) {
+          doc.addPage();
+          curY = 16;
+          col = 0;
+        }
+        const x = margin + col * (imgW + gap);
+        try {
+          // Detect format from data URL
+          const fmt = ph.url.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+          doc.addImage(ph.url, fmt, x, curY, imgW, imgH, undefined, 'FAST');
+        } catch(e) {
+          // If image fails, draw a placeholder rect
+          doc.setDrawColor(200); doc.setFillColor(240, 237, 232);
+          doc.rect(x, curY, imgW, imgH, 'FD');
+          doc.setFontSize(7); doc.setTextColor(180);
+          doc.text('Image', x + imgW/2, curY + imgH/2, { align: 'center' });
+        }
+        // Photo name caption
+        if (ph.name) {
+          doc.setFontSize(6); doc.setTextColor(160); doc.setFont(undefined, 'normal');
+          const caption = ph.name.length > 28 ? ph.name.slice(0, 25) + '…' : ph.name;
+          doc.text(caption, x + imgW / 2, curY + imgH + 3, { align: 'center' });
+        }
+        col++;
+        if (col >= cols) { col = 0; curY += imgH + (ph.name ? 8 : 5); }
+      });
+    }
+  });
+
+  // ── Footer
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    const pageH = doc.internal.pageSize.getHeight();
+    doc.setFontSize(8); doc.setTextColor(180);
+    doc.text(
+      `Généré le ${new Date().toLocaleDateString('fr-FR')} — Canal 7 Prépa & Tournage`,
+      14, pageH - 8
+    );
+    doc.text(`Page ${i} / ${pageCount}`, 260, pageH - 8);
+  }
+
+  doc.save(`decors-${(film?.titre || 'film').replace(/\s+/g,'-').toLowerCase()}.pdf`);
+  showToast('PDF décors téléchargé');
+}
+
+/* ═══════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════ */
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function onDecorChange(sel) {
+  const manual = document.getElementById('p-decor-manual');
+  if (sel.value === '__autre__') {
+    manual.style.display = 'block';
+    manual.focus();
+  } else {
+    manual.style.display = 'none';
+    manual.value = '';
+  }
+}
+
+// Also wire modal-decor open to reset form
+function openModalDecorReset() {
+  document.getElementById('modal-decor-title').textContent = 'Nouveau décor';
+  document.getElementById('edit-decor-id').value = '';
+  ['d-nom','d-adresse','d-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('d-type').selectedIndex = 0;
+  document.getElementById('d-jours').value = '1';
+  document.getElementById('d-couleur').value = 'blue';
+  document.getElementById('d-date-debut').value = '';
+  document.getElementById('d-date-fin').value = '';
+  document.getElementById('d-date-isolee-input').value = '';
+  document.getElementById('d-dates-isolees-list').innerHTML = '';
+  setDecorDateMode('periode');
+  renderDecorRenfortsZone([]);
+  document.getElementById('modal-decor').classList.add('open');
+}
+
+let _decorNbRenforts = 0; // nombre de renforts demandés
+
+function renderDecorRenfortsZone(selected) {
+  _decorNbRenforts = selected.length || 0;
+  _renderRenfortsUI(selected, []);
+}
+
+function _renderRenfortsUI(selectedIds, freeNames) {
+  const zone = document.getElementById('d-renforts-zone');
+  const membres = equipeForCurrentFilm().filter(m => m.poste === 'Renfort');
+  const hasEquipe = membres.length > 0;
+
+  // ── Qty picker
+  let html = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">
+    <span style="font-size:12px;color:#aaa;margin-right:2px;">Nb de renforts :</span>`;
+  [0,1,2,3,4,5,6].forEach(n => {
+    const active = n === _decorNbRenforts;
+    html += `<button type="button" onclick="setDecorNbRenforts(${n})"
+      style="min-width:32px;height:32px;border-radius:8px;border:1px solid ${active ? '#e84040' : '#e0ddd8'};
+      background:${active ? '#e84040' : 'transparent'};color:${active ? '#fff' : '#888'};
+      font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;padding:0 8px;">
+      ${n === 0 ? '—' : '+' + n}
+    </button>`;
+  });
+  html += `</div>`;
+
+  // ── Name slots
+  if (_decorNbRenforts > 0) {
+    html += `<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;" id="d-renfort-slots">`;
+    for (let i = 0; i < _decorNbRenforts; i++) {
+      if (hasEquipe) {
+        // Dropdown from equipe renforts
+        const selVal = selectedIds[i] || '';
+        html += `<div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:11px;color:#aaa;width:60px;flex-shrink:0;">Renfort ${i+1}</span>
+          <select class="form-input d-renfort-select" style="flex:1;">
+            <option value="">— Choisir —</option>
+            ${membres.map(m => {
+              const name = [m.prenom, m.nom].filter(Boolean).join(' ');
+              return `<option value="${m.id}" ${m.id === selVal ? 'selected' : ''}>${esc(name)}</option>`;
+            }).join('')}
+            <option value="__libre__" ${selVal === '__libre__' ? 'selected' : ''}>Saisir manuellement…</option>
+          </select>
+        </div>`;
+      } else {
+        // Free text
+        const val = freeNames[i] || selectedIds[i] || '';
+        html += `<div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:11px;color:#aaa;width:60px;flex-shrink:0;">Renfort ${i+1}</span>
+          <input class="form-input d-renfort-free" placeholder="Prénom Nom" value="${esc(val)}" style="flex:1;">
+        </div>`;
+      }
+    }
+    html += `</div>`;
+  }
+
+  zone.innerHTML = html;
+}
+
+function setDecorNbRenforts(n) {
+  // Preserve current selections
+  const currentIds   = [...document.querySelectorAll('.d-renfort-select')].map(s => s.value);
+  const currentFree  = [...document.querySelectorAll('.d-renfort-free')].map(i => i.value);
+  _decorNbRenforts = n;
+  _renderRenfortsUI(currentIds, currentFree);
+}
+
+function getSelectedRenforts() {
+  // Returns array of { id } or { name } objects — stored as-is
+  const selects = [...document.querySelectorAll('.d-renfort-select')].map(s => s.value).filter(v => v && v !== '__libre__');
+  const frees   = [...document.querySelectorAll('.d-renfort-free')].map(i => i.value.trim()).filter(Boolean);
+  return [...selects, ...frees];
+}
+
+let _decorDatesIsolees = []; // temp list while modal is open
+
+function setDecorDateMode(mode) {
+  document.getElementById('d-mode-periode').style.display  = mode === 'periode'  ? '' : 'none';
+  document.getElementById('d-mode-isolees').style.display  = mode === 'isolees'  ? '' : 'none';
+  const btnP = document.getElementById('d-mode-btn-periode');
+  const btnI = document.getElementById('d-mode-btn-isolees');
+  if (mode === 'periode') {
+    btnP.style.background = '#e84040'; btnP.style.color = '#fff'; btnP.style.borderColor = '#e84040';
+    btnI.style.background = 'transparent'; btnI.style.color = '#888'; btnI.style.borderColor = '#e0ddd8';
+  } else {
+    btnI.style.background = '#e84040'; btnI.style.color = '#fff'; btnI.style.borderColor = '#e84040';
+    btnP.style.background = 'transparent'; btnP.style.color = '#888'; btnP.style.borderColor = '#e0ddd8';
+  }
+  document.getElementById('d-date-debut').dataset.mode = mode;
+}
+
+function addDecorDate() {
+  const val = document.getElementById('d-date-isolee-input').value;
+  if (!val) return;
+  if (_decorDatesIsolees.includes(val)) { showToast('Date déjà ajoutée'); return; }
+  _decorDatesIsolees.push(val);
+  _decorDatesIsolees.sort();
+  renderDecorDatesIsolees();
+  document.getElementById('d-date-isolee-input').value = '';
+}
+
+function removeDecorDate(val) {
+  _decorDatesIsolees = _decorDatesIsolees.filter(d => d !== val);
+  renderDecorDatesIsolees();
+}
+
+function renderDecorDatesIsolees() {
+  const list = document.getElementById('d-dates-isolees-list');
+  list.innerHTML = _decorDatesIsolees.map(d => `
+    <div style="display:inline-flex;align-items:center;gap:5px;background:#f0ede8;border-radius:20px;padding:4px 10px;font-size:12px;color:#555;">
+      ${fmtDate(d)}
+      <button type="button" onclick="removeDecorDate('${d}')" style="background:none;border:none;color:#aaa;cursor:pointer;font-size:14px;line-height:1;padding:0 0 0 2px;">✕</button>
+    </div>
+  `).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   DÉCORS
+═══════════════════════════════════════════════ */
+const DECOR_COLORS = {
+  blue:   { bg: '#e6f1fb', border: '#378add', text: '#0c447c' },
+  green:  { bg: '#eaf3de', border: '#639922', text: '#27500a' },
+  amber:  { bg: '#faeeda', border: '#ba7517', text: '#633806' },
+  red:    { bg: '#fcebeb', border: '#e24b4a', text: '#791f1f' },
+  purple: { bg: '#eeedfe', border: '#7f77dd', text: '#3c3489' },
+  gray:   { bg: '#f1efe8', border: '#888780', text: '#444441' },
+};
+
+function decorsForCurrentFilm() {
+  return state.decors.filter(d => d.filmId === state.currentFilm);
+}
+
+function renderDecors() {
+  const film = currentFilmData();
+  document.getElementById('topbar-sub-decors').textContent = filmSubText(); //old=
+    film ? (film.titre + ' · ' + fmtDate(film.du) + ' – ' + fmtDate(film.au)) : '—';
+
+  const list = decorsForCurrentFilm();
+  const container = document.getElementById('decors-cards');
+  const empty = document.getElementById('decors-empty');
+
+  if (list.length === 0) {
+    container.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  const ponctuels = ponctuelsForCurrentFilm();
+  const grid = document.createElement('div');
+  grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;';
+
+  list.forEach(function(d) {
+    const c = DECOR_COLORS[d.couleur] || DECOR_COLORS.gray;
+    const matching = ponctuels.filter(function(p){ return p.decor === d.nom; });
+    const photos = d.photos || [];
+
+    const card = document.createElement('div');
+    card.style.cssText = 'background:#fff;border:1px solid #ddd9d2;border-radius:12px;overflow:hidden;border-top:3px solid ' + c.border + ';';
+
+    // ── Body
+    const body = document.createElement('div');
+    body.style.cssText = 'padding:16px 16px 12px;';
+
+    // Title row
+    const titleRow = document.createElement('div');
+    titleRow.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;';
+    const title = document.createElement('div');
+    title.style.cssText = 'font-size:15px;font-weight:700;';
+    title.textContent = d.nom;
+
+    const btnGroup = document.createElement('div');
+    btnGroup.style.cssText = 'display:flex;gap:4px;flex-shrink:0;';
+
+    function mkBtn(label, onclick) {
+      const b = document.createElement('button');
+      b.className = 'icon-btn';
+      b.title = label;
+      b.textContent = label === 'Photo' ? '+' : label === 'Grille' ? '#' : label === 'Modifier' ? '✎' : '✕';
+      b.style.cssText = 'font-size:13px;';
+      b.addEventListener('click', onclick);
+      return b;
+    }
+
+    btnGroup.appendChild(mkBtn('Photo', function(){ triggerPhotoUpload(d.id); }));
+    if (photos.length > 0) {
+      btnGroup.appendChild(mkBtn('Grille', function(){ openPhotoViewer(d.id, 0); }));
+    }
+    btnGroup.appendChild(mkBtn('Modifier', function(){ editDecor(d.id); }));
+    btnGroup.appendChild(mkBtn('✕', function(){ confirmDelete('decor', d.id, d.nom); }));
+
+    titleRow.appendChild(title);
+    titleRow.appendChild(btnGroup);
+    body.appendChild(titleRow);
+
+    // Type badge
+    if (d.type) {
+      const badge = document.createElement('span');
+      badge.style.cssText = 'font-size:11px;padding:2px 8px;border-radius:20px;background:' + c.bg + ';color:' + c.text + ';font-weight:500;display:inline-block;';
+      badge.textContent = d.type;
+      body.appendChild(badge);
+    }
+
+    // Address
+    if (d.adresse) {
+      const addr = document.createElement('div');
+      addr.style.cssText = 'font-size:12px;color:#888;margin-top:8px;';
+      addr.textContent = '📍 ' + d.adresse;
+      body.appendChild(addr);
+    }
+
+    // Dates
+    const hasPeriode  = d.dateMode === 'periode' && d.dateDebut;
+    const hasIsolees  = d.dateMode === 'isolees' && d.datesIsolees && d.datesIsolees.length > 0;
+    if (hasPeriode || hasIsolees) {
+      const datesEl = document.createElement('div');
+      datesEl.style.cssText = 'margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;';
+      if (hasPeriode) {
+        const tag = document.createElement('span');
+        tag.style.cssText = 'font-size:11px;background:' + c.bg + ';color:' + c.text + ';padding:3px 8px;border-radius:20px;font-weight:500;';
+        tag.textContent = '🗓 ' + fmtDate(d.dateDebut) + (d.dateFin ? ' → ' + fmtDate(d.dateFin) : '');
+        datesEl.appendChild(tag);
+      } else if (hasIsolees) {
+        d.datesIsolees.forEach(function(dt) {
+          const tag = document.createElement('span');
+          tag.style.cssText = 'font-size:11px;background:' + c.bg + ';color:' + c.text + ';padding:3px 8px;border-radius:20px;font-weight:500;';
+          tag.textContent = '🗓 ' + fmtDate(dt);
+          datesEl.appendChild(tag);
+        });
+      }
+      body.appendChild(datesEl);
+    }
+
+    // Renforts
+    const renfortIds = (d.renforts || []);
+    if (renfortIds.length > 0) {
+      const rDiv = document.createElement('div');
+      rDiv.style.cssText = 'margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;';
+      const rLabel = document.createElement('span');
+      rLabel.style.cssText = 'font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-right:4px;';
+      rLabel.textContent = 'Renforts :';
+      rDiv.appendChild(rLabel);
+      renfortIds.forEach(function(ref) {
+        const membre = (state.equipe || []).find(m => m.id === ref);
+        const name = membre ? [membre.prenom, membre.nom].filter(Boolean).join(' ') : ref;
+        const tag = document.createElement('span');
+        tag.style.cssText = 'font-size:11px;background:#fee2e2;color:#b91c1c;padding:2px 8px;border-radius:20px;font-weight:500;';
+        tag.textContent = '👤 ' + name;
+        rDiv.appendChild(tag);
+      });
+      body.appendChild(rDiv);
+    }
+
+    // Photo grid preview
+    if (photos.length > 0) {
+      const pg = document.createElement('div');
+      pg.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-top:10px;border-radius:6px;overflow:hidden;';
+      photos.slice(0, 4).forEach(function(p, i) {
+        const cell = document.createElement('div');
+        cell.style.cssText = 'position:relative;aspect-ratio:1/1;overflow:hidden;cursor:pointer;';
+        cell.addEventListener('click', function(){ openPhotoViewer(d.id, i); });
+        const img = document.createElement('img');
+        img.src = p.url;
+        img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+        cell.appendChild(img);
+        if (i === 3 && photos.length > 4) {
+          const over = document.createElement('div');
+          over.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;';
+          over.textContent = '+' + (photos.length - 3);
+          cell.appendChild(over);
+        }
+        pg.appendChild(cell);
+      });
+      body.appendChild(pg);
+    }
+
+    card.appendChild(body);
+
+    // ── Footer
+    const footer = document.createElement('div');
+    footer.style.cssText = 'padding:10px 16px;background:#faf9f7;border-top:1px solid #f0ede8;display:flex;gap:16px;align-items:center;';
+
+    function mkStat(val, label, onclick) {
+      const s = document.createElement('div');
+      s.style.cssText = 'text-align:center;' + (onclick ? 'cursor:pointer;' : '');
+      if (onclick) s.addEventListener('click', onclick);
+      const v = document.createElement('div');
+      v.style.cssText = 'font-size:16px;font-weight:700;color:' + c.text + ';';
+      v.textContent = val;
+      const l = document.createElement('div');
+      l.style.cssText = 'font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;';
+      l.textContent = label;
+      s.appendChild(v); s.appendChild(l);
+      return s;
+    }
+
+    function mkSep() {
+      const s = document.createElement('div');
+      s.style.cssText = 'width:1px;background:#e0ddd8;align-self:stretch;';
+      return s;
+    }
+
+    footer.appendChild(mkStat(d.jours || '—', 'Jour' + ((d.jours||0)>1?'s':'')));
+    footer.appendChild(mkSep());
+    footer.appendChild(mkStat(matching.length, 'Ponctuel' + (matching.length>1?'s':'')));
+    footer.appendChild(mkSep());
+    footer.appendChild(mkStat(photos.length, 'Photo' + (photos.length>1?'s':''), function(){ triggerPhotoUpload(d.id); }));
+
+    if (d.notes) {
+      footer.appendChild(mkSep());
+      const n = document.createElement('div');
+      n.style.cssText = 'font-size:11px;color:#999;line-height:1.4;flex:1;';
+      n.textContent = d.notes;
+      footer.appendChild(n);
+    }
+
+    card.appendChild(footer);
+    grid.appendChild(card);
+  });
+
+  container.innerHTML = '';
+  container.appendChild(grid);
+}
+
+// ── Photo upload
+let _photoDecorId = null;
+(function(){
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*'; inp.multiple = true;
+  inp.style.display = 'none'; inp.id = 'photo-file-input';
+  inp.addEventListener('change', function(){
+    const d = state.decors.find(function(x){ return x.id === _photoDecorId; });
+    if (!d) return;
+    if (!d.photos) d.photos = [];
+    const files = Array.from(inp.files);
+    let done = 0;
+    files.forEach(function(f){
+      const reader = new FileReader();
+      reader.onload = function(e){
+        d.photos.push({ url: e.target.result, name: f.name });
+        done++;
+        if (done === files.length) {
+          saveToStorage();
+          renderDecors();
+          showToast(done + ' photo' + (done>1?'s':'') + ' ajoutée' + (done>1?'s':''));
+        }
+      };
+      reader.readAsDataURL(f);
+    });
+    inp.value = '';
+  });
+  document.body.appendChild(inp);
+})();
+
+function triggerPhotoUpload(decorId) {
+  _photoDecorId = decorId;
+  document.getElementById('photo-file-input').click();
+}
+
+// ── Photo viewer (lightbox)
+let _viewerDecorId = null;
+let _viewerIdx = 0;
+
+function openPhotoViewer(decorId, idx) {
+  const d = state.decors.find(function(x){ return x.id === decorId; });
+  if (!d || !d.photos || d.photos.length === 0) return;
+  _viewerDecorId = decorId;
+  _viewerIdx = idx;
+
+  let ov = document.getElementById('photo-viewer-overlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'photo-viewer-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:500;display:flex;flex-direction:column;';
+    ov.addEventListener('click', function(e){ if(e.target===ov) closePhotoViewer(); });
+
+    // Top bar
+    const topbar = document.createElement('div');
+    topbar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:14px 20px;flex-shrink:0;';
+    const titleEl = document.createElement('div');
+    titleEl.id = 'pv-title';
+    titleEl.style.cssText = 'color:#fff;font-size:14px;font-weight:600;';
+    const actions = document.createElement('div');
+    actions.style.cssText = 'display:flex;gap:10px;align-items:center;';
+
+    const delBtn = document.createElement('button');
+    delBtn.textContent = 'Supprimer';
+    delBtn.style.cssText = 'background:#e84040;color:#fff;border:none;padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;';
+    delBtn.addEventListener('click', deleteCurrentPhoto);
+
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕';
+    closeBtn.style.cssText = 'background:transparent;color:#fff;border:1px solid #444;width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;';
+    closeBtn.addEventListener('click', closePhotoViewer);
+
+    actions.appendChild(delBtn);
+    actions.appendChild(closeBtn);
+    topbar.appendChild(titleEl);
+    topbar.appendChild(actions);
+    ov.appendChild(topbar);
+
+    // Main image
+    const mainWrap = document.createElement('div');
+    mainWrap.style.cssText = 'flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;';
+    const mainImg = document.createElement('img');
+    mainImg.id = 'pv-main-img';
+    mainImg.style.cssText = 'max-width:90%;max-height:100%;object-fit:contain;border-radius:6px;';
+
+    const prevBtn = document.createElement('button');
+    prevBtn.textContent = '‹';
+    prevBtn.style.cssText = 'position:absolute;left:16px;background:rgba(255,255,255,0.15);color:#fff;border:none;width:44px;height:44px;border-radius:50%;font-size:24px;cursor:pointer;';
+    prevBtn.addEventListener('click', function(){ navigatePhoto(-1); });
+
+    const nextBtn = document.createElement('button');
+    nextBtn.textContent = '›';
+    nextBtn.style.cssText = 'position:absolute;right:16px;background:rgba(255,255,255,0.15);color:#fff;border:none;width:44px;height:44px;border-radius:50%;font-size:24px;cursor:pointer;';
+    nextBtn.addEventListener('click', function(){ navigatePhoto(1); });
+
+    mainWrap.appendChild(prevBtn);
+    mainWrap.appendChild(mainImg);
+    mainWrap.appendChild(nextBtn);
+    ov.appendChild(mainWrap);
+
+    // Thumbnail strip
+    const strip = document.createElement('div');
+    strip.id = 'pv-strip';
+    strip.style.cssText = 'display:flex;gap:6px;padding:12px 20px;overflow-x:auto;flex-shrink:0;';
+    ov.appendChild(strip);
+
+    document.body.appendChild(ov);
+
+    document.addEventListener('keydown', pvKeyHandler);
+  }
+
+  refreshPhotoViewer();
+  ov.style.display = 'flex';
+}
+
+function refreshPhotoViewer() {
+  const d = state.decors.find(function(x){ return x.id === _viewerDecorId; });
+  if (!d || !d.photos) return;
+  const photos = d.photos;
+
+  document.getElementById('pv-title').textContent = d.nom + ' · ' + (_viewerIdx+1) + ' / ' + photos.length;
+  document.getElementById('pv-main-img').src = photos[_viewerIdx].url;
+
+  const strip = document.getElementById('pv-strip');
+  strip.innerHTML = '';
+  photos.forEach(function(p, i) {
+    const th = document.createElement('img');
+    th.src = p.url;
+    th.style.cssText = 'width:60px;height:60px;object-fit:cover;border-radius:6px;cursor:pointer;flex-shrink:0;opacity:' + (i===_viewerIdx?'1':'0.5') + ';border:2px solid ' + (i===_viewerIdx?'#e84040':'transparent') + ';';
+    th.addEventListener('click', function(){ _viewerIdx = i; refreshPhotoViewer(); });
+    strip.appendChild(th);
+  });
+}
+
+function navigatePhoto(dir) {
+  const d = state.decors.find(function(x){ return x.id === _viewerDecorId; });
+  if (!d || !d.photos) return;
+  _viewerIdx = (_viewerIdx + dir + d.photos.length) % d.photos.length;
+  refreshPhotoViewer();
+}
+
+function deleteCurrentPhoto() {
+  const d = state.decors.find(function(x){ return x.id === _viewerDecorId; });
+  if (!d || !d.photos) return;
+  d.photos.splice(_viewerIdx, 1);
+  saveToStorage();
+  if (d.photos.length === 0) { closePhotoViewer(); renderDecors(); return; }
+  _viewerIdx = Math.min(_viewerIdx, d.photos.length - 1);
+  refreshPhotoViewer();
+  renderDecors();
+  showToast('Photo supprimée');
+}
+
+function closePhotoViewer() {
+  const ov = document.getElementById('photo-viewer-overlay');
+  if (ov) ov.style.display = 'none';
+  document.removeEventListener('keydown', pvKeyHandler);
+}
+
+function pvKeyHandler(e) {
+  if (e.key === 'ArrowRight') navigatePhoto(1);
+  else if (e.key === 'ArrowLeft') navigatePhoto(-1);
+  else if (e.key === 'Escape') closePhotoViewer();
+}
+
+function saveDecor() {
+  const nom = document.getElementById('d-nom').value.trim();
+  if (!nom) { showToast('Saisissez un nom de décor'); return; }
+  const id = document.getElementById('edit-decor-id').value;
+  const mode = document.getElementById('d-date-debut').dataset.mode || 'periode';
+  const data = {
+    filmId:  state.currentFilm,
+    nom,
+    adresse: document.getElementById('d-adresse').value.trim(),
+    type:    document.getElementById('d-type').value,
+    jours:   parseInt(document.getElementById('d-jours').value) || 0,
+    couleur: document.getElementById('d-couleur').value || 'gray',
+    notes:   document.getElementById('d-notes').value.trim(),
+    dateMode:   mode,
+    dateDebut:  mode === 'periode' ? document.getElementById('d-date-debut').value : '',
+    dateFin:    mode === 'periode' ? document.getElementById('d-date-fin').value : '',
+    datesIsolees: mode === 'isolees' ? [..._decorDatesIsolees] : [],
+    renforts:   getSelectedRenforts(),
+  };
+  if (id) {
+    const d = state.decors.find(d => d.id === id);
+    if (d) { Object.assign(d, data); if (!d.photos) d.photos = []; }
+    showToast('Décor modifié');
+  } else {
+    state.decors.push({ id: uid(), photos: [], ...data });
+    showToast('Décor ajouté');
+  }
+  saveToStorage();
+  closeModal('modal-decor');
+  refreshDecorDropdown();
+  renderDecors();
+}
+
+function editDecor(id) {
+  const d = state.decors.find(d => d.id === id);
+  if (!d) return;
+  document.getElementById('modal-decor-title').textContent = 'Modifier le décor';
+  document.getElementById('edit-decor-id').value = d.id;
+  document.getElementById('d-nom').value = d.nom;
+  document.getElementById('d-adresse').value = d.adresse || '';
+  document.getElementById('d-type').value = d.type || '';
+  document.getElementById('d-jours').value = d.jours || '';
+  document.getElementById('d-couleur').value = d.couleur || 'gray';
+  document.getElementById('d-notes').value = d.notes || '';
+  // Restore date mode
+  const mode = d.dateMode || 'periode';
+  document.getElementById('d-date-debut').value = d.dateDebut || '';
+  document.getElementById('d-date-fin').value = d.dateFin || '';
+  _decorDatesIsolees = d.datesIsolees ? [...d.datesIsolees] : [];
+  renderDecorDatesIsolees();
+  setDecorDateMode(mode);
+  renderDecorRenfortsZone(d.renforts || []);
+  document.getElementById('modal-decor').classList.add('open');
+}
+
+// Refresh the decor dropdown in the ponctuel modal
+function refreshDecorDropdown() {
+  const sel = document.getElementById('p-decor');
+  const current = sel.value;
+  const decors = decorsForCurrentFilm();
+  sel.innerHTML = `<option value="">— Choisir un décor —</option>` +
+    decors.map(d => `<option value="${esc(d.nom)}">${esc(d.nom)}</option>`).join('') +
+    `<option value="__autre__">Autre / saisir manuellement…</option>`;
+  if (current) sel.value = current;
+}
+
+
+function renderAll() {
+  renderPonctuels();
+  renderListe();
+  refreshDecorDropdown();
+  if (state.currentView === 'calendrier') renderCalendar();
+  if (state.currentView === 'decors') renderDecors();
+  if (state.currentView === 'equipe') renderEquipe();
+}
+
+/* ═══════════════════════════════════════════════
+   ÉQUIPE
+═══════════════════════════════════════════════ */
+function equipeForCurrentFilm() {
+  return (state.equipe || []).filter(m => m.filmId === state.currentFilm);
+}
+
+let _membrePhotoData  = null;
+let _habFileData      = null;
+let _permisFileData   = null;
+
+function openModalMembre() {
+  document.getElementById('modal-membre-title').textContent = 'Nouveau membre';
+  document.getElementById('edit-membre-id').value = '';
+  ['m-prenom','m-nom','m-tel','m-email','m-du','m-au'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('m-poste').selectedIndex = 0;
+  document.getElementById('m-permis-vl').checked = false;
+  document.getElementById('m-permis-pl').checked = false;
+  _membrePhotoData = null;
+  _habFileData     = null;
+  _permisFileData  = null;
+  // Reset photo preview
+  const prev = document.getElementById('m-photo-preview');
+  prev.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#ccc" stroke-width="1.5"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="#ccc" stroke-width="1.5" stroke-linecap="round"/></svg>';
+  prev.style.background = '#f0ede8';
+  // Reset file zones
+  document.getElementById('m-hab-file-name').textContent = 'Importer un fichier (PDF, image…)';
+  document.getElementById('m-hab-file-clear').style.display = 'none';
+  document.getElementById('m-permis-file-name').textContent = 'Importer un fichier (PDF, image…)';
+  document.getElementById('m-permis-file-clear').style.display = 'none';
+  setHabMode('non');
+  document.getElementById('modal-membre').classList.add('open');
+}
+
+function setHabMode(mode) {
+  const oui = document.getElementById('m-hab-btn-oui');
+  const non = document.getElementById('m-hab-btn-non');
+  const zone = document.getElementById('m-hab-fichier-zone');
+  if (mode === 'oui') {
+    oui.style.background = '#e84040'; oui.style.color = '#fff'; oui.style.borderColor = '#e84040';
+    non.style.background = 'transparent'; non.style.color = '#888'; non.style.borderColor = '#e0ddd8';
+    zone.style.display = '';
+  } else {
+    non.style.background = '#e84040'; non.style.color = '#fff'; non.style.borderColor = '#e84040';
+    oui.style.background = 'transparent'; oui.style.color = '#888'; oui.style.borderColor = '#e0ddd8';
+    zone.style.display = 'none';
+  }
+  document.getElementById('m-hab-btn-oui').dataset.selected = mode === 'oui' ? '1' : '';
+}
+
+function triggerMembrePhoto() {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = function() {
+    const f = inp.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = function(e) {
+      _membrePhotoData = e.target.result;
+      const prev = document.getElementById('m-photo-preview');
+      prev.innerHTML = '';
+      const img = document.createElement('img');
+      img.src = _membrePhotoData;
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+      prev.appendChild(img);
+    };
+    r.readAsDataURL(f);
+  };
+  inp.click();
+}
+
+function triggerHabFile() {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*,.pdf';
+  inp.onchange = function() {
+    const f = inp.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = function(e) {
+      _habFileData = { data: e.target.result, name: f.name, type: f.type };
+      document.getElementById('m-hab-file-name').textContent = f.name;
+      document.getElementById('m-hab-file-clear').style.display = '';
+    };
+    r.readAsDataURL(f);
+  };
+  inp.click();
+}
+
+function clearHabFile() {
+  _habFileData = null;
+  document.getElementById('m-hab-file-name').textContent = 'Importer un fichier (PDF, image…)';
+  document.getElementById('m-hab-file-clear').style.display = 'none';
+}
+
+function triggerPermisFile() {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*,.pdf';
+  inp.onchange = function() {
+    const f = inp.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = function(e) {
+      _permisFileData = { data: e.target.result, name: f.name, type: f.type };
+      document.getElementById('m-permis-file-name').textContent = f.name;
+      document.getElementById('m-permis-file-clear').style.display = '';
+    };
+    r.readAsDataURL(f);
+  };
+  inp.click();
+}
+
+function clearPermisFile() {
+  _permisFileData = null;
+  document.getElementById('m-permis-file-name').textContent = 'Importer un fichier (PDF, image…)';
+  document.getElementById('m-permis-file-clear').style.display = 'none';
+}
+
+function saveMembre() {
+  const prenom = document.getElementById('m-prenom').value.trim();
+  const nom    = document.getElementById('m-nom').value.trim();
+  if (!prenom && !nom) { showToast('Saisissez au moins un nom'); return; }
+  const id = document.getElementById('edit-membre-id').value;
+  const habOui = !!document.getElementById('m-hab-btn-oui').dataset.selected;
+  const existing = id ? (state.equipe || []).find(m => m.id === id) : null;
+
+  const data = {
+    filmId: state.currentFilm,
+    prenom, nom,
+    poste:  document.getElementById('m-poste').value.trim(),
+    tel:    document.getElementById('m-tel').value.trim(),
+    email:  document.getElementById('m-email').value.trim(),
+    du:     document.getElementById('m-du').value,
+    au:     document.getElementById('m-au').value,
+    permisVL: document.getElementById('m-permis-vl').checked,
+    permisPL: document.getElementById('m-permis-pl').checked,
+    permisFile: _permisFileData !== null ? _permisFileData : (existing?.permisFile || null),
+    habElec: habOui,
+    habFile: _habFileData !== null ? _habFileData : (existing?.habFile || null),
+    photo:  _membrePhotoData !== null ? _membrePhotoData : (existing?.photo || null),
+  };
+
+  if (!state.equipe) state.equipe = [];
+  if (id) {
+    const idx = state.equipe.findIndex(m => m.id === id);
+    if (idx >= 0) state.equipe[idx] = { ...state.equipe[idx], ...data };
+    showToast('Membre modifié');
+  } else {
+    state.equipe.push({ id: uid(), ...data });
+    showToast('Membre ajouté');
+  }
+  saveToStorage();
+  closeModal('modal-membre');
+  renderEquipe();
+}
+
+function editMembre(id) {
+  const m = (state.equipe || []).find(m => m.id === id);
+  if (!m) return;
+  document.getElementById('modal-membre-title').textContent = 'Modifier le membre';
+  document.getElementById('edit-membre-id').value = m.id;
+  document.getElementById('m-prenom').value = m.prenom || '';
+  document.getElementById('m-nom').value    = m.nom || '';
+  document.getElementById('m-poste').value  = m.poste || '';
+  document.getElementById('m-tel').value    = m.tel || '';
+  document.getElementById('m-email').value  = m.email || '';
+  document.getElementById('m-du').value     = m.du || '';
+  document.getElementById('m-au').value     = m.au || '';
+  document.getElementById('m-permis-vl').checked = !!m.permisVL;
+  document.getElementById('m-permis-pl').checked = !!m.permisPL;
+  _membrePhotoData = null; _habFileData = null; _permisFileData = null;
+  // Photo
+  const prev = document.getElementById('m-photo-preview');
+  if (m.photo) {
+    prev.innerHTML = '';
+    const img = document.createElement('img');
+    img.src = m.photo;
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+    prev.appendChild(img);
+  } else {
+    prev.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#ccc" stroke-width="1.5"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="#ccc" stroke-width="1.5" stroke-linecap="round"/></svg>';
+  }
+  // Hab
+  setHabMode(m.habElec ? 'oui' : 'non');
+  if (m.habFile) {
+    document.getElementById('m-hab-file-name').textContent = m.habFile.name;
+    document.getElementById('m-hab-file-clear').style.display = '';
+  } else {
+    document.getElementById('m-hab-file-name').textContent = 'Importer un fichier (PDF, image…)';
+    document.getElementById('m-hab-file-clear').style.display = 'none';
+  }
+  // Permis file
+  if (m.permisFile) {
+    document.getElementById('m-permis-file-name').textContent = m.permisFile.name;
+    document.getElementById('m-permis-file-clear').style.display = '';
+  } else {
+    document.getElementById('m-permis-file-name').textContent = 'Importer un fichier (PDF, image…)';
+    document.getElementById('m-permis-file-clear').style.display = 'none';
+  }
+  document.getElementById('modal-membre').classList.add('open');
+}
+
+function renderEquipe() {
+  const film = currentFilmData();
+  document.getElementById('topbar-sub-equipe').textContent = filmSubText(); //old=
+    film ? film.titre : '—';
+  const list    = equipeForCurrentFilm();
+  const cards   = document.getElementById('equipe-cards');
+  const empty   = document.getElementById('equipe-empty');
+
+  if (list.length === 0) {
+    cards.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  cards.innerHTML = list.map(m => {
+    const fullName  = [m.prenom, m.nom].filter(Boolean).join(' ');
+    const permis    = [m.permisVL ? 'VL' : '', m.permisPL ? 'PL' : ''].filter(Boolean).join(' + ');
+    const habBadge  = m.habElec
+      ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;background:#dcfce7;color:#166534;">⚡ Habilité</span>`
+      : `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;background:#f0ede8;color:#888;">Non habilité</span>`;
+    const permisBadge = permis
+      ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;background:#dbeafe;color:#1e3a5f;">🚗 ${permis}</span>`
+      : '';
+    const avatar = m.photo
+      ? `<img src="${m.photo}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
+      : `<div style="width:52px;height:52px;border-radius:50%;background:#e0ddd8;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;font-weight:700;color:#aaa;">${(m.prenom?.[0]||'')+(m.nom?.[0]||'')}</div>`;
+    const dates = (m.du || m.au)
+      ? `<div style="font-size:11px;color:#aaa;margin-top:4px;">📅 ${fmtDate(m.du)}${m.au ? ' → ' + fmtDate(m.au) : ''}</div>`
+      : '';
+    const habLink = m.habElec && m.habFile
+      ? `<button onclick="openMembreFile('${m.id}','hab')" style="font-size:11px;color:#3b82f6;background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;">Voir justificatif</button>`
+      : '';
+    const permisLink = (m.permisVL || m.permisPL) && m.permisFile
+      ? `<button onclick="openMembreFile('${m.id}','permis')" style="font-size:11px;color:#3b82f6;background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;margin-left:6px;">Voir permis</button>`
+      : '';
+
+    return `
+      <div style="background:#fff;border:1px solid #ddd9d2;border-radius:12px;overflow:hidden;">
+        <div style="padding:16px;">
+          <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;">
+            ${avatar}
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:15px;font-weight:700;">${esc(fullName)}</div>
+              ${m.poste ? `<div style="font-size:12px;color:#888;margin-top:1px;">${esc(m.poste)}</div>` : ''}
+              ${dates}
+            </div>
+            <div style="display:flex;gap:4px;flex-shrink:0;">
+              <button class="icon-btn" onclick="editMembre('${m.id}')" title="Modifier">
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M9 2l2 2-7 7H2V9L9 2Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+              </button>
+              <button class="icon-btn" onclick="confirmDelete('membre','${m.id}','${esc(fullName)}')" title="Supprimer">
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 3h11M4 3V2h5v1M5 6v4M8 6v4M2 3l1 9h7l1-9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">
+            ${habBadge} ${permisBadge}
+          </div>
+          ${m.tel   ? `<div style="font-size:12px;color:#555;margin-top:4px;">📞 <a href="tel:${esc(m.tel)}" style="color:#555;text-decoration:none;">${esc(m.tel)}</a></div>` : ''}
+          ${m.email ? `<div style="font-size:12px;color:#555;margin-top:2px;">✉️ <a href="mailto:${esc(m.email)}" style="color:#555;text-decoration:none;">${esc(m.email)}</a></div>` : ''}
+          ${habLink || permisLink ? `<div style="margin-top:6px;">${habLink}${permisLink}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function openMembreFile(id, type) {
+  const m = (state.equipe || []).find(m => m.id === id);
+  if (!m) return;
+  const file = type === 'hab' ? m.habFile : m.permisFile;
+  if (!file) return;
+  const win = window.open();
+  if (file.type === 'application/pdf') {
+    win.document.write(`<iframe src="${file.data}" style="width:100%;height:100vh;border:none;"></iframe>`);
+  } else {
+    win.document.write(`<img src="${file.data}" style="max-width:100%;display:block;margin:auto;">`);
+  }
+}
+loadFromStorage();
+
+/* ═══════════════════════════════════════════════
+   HOME SCREEN
+═══════════════════════════════════════════════ */
+const DOT_COLORS = { green:'#22c55e', amber:'#f59e0b', blue:'#3b82f6', red:'#e84040', purple:'#7f77dd', '':'#555' };
+const CARD_TOPS  = { green:'#22c55e', amber:'#f59e0b', blue:'#3b82f6', red:'#e84040', purple:'#7f77dd', '':'#333' };
+
+function renderHome() {
+  const grid      = document.getElementById('home-films-grid');
+  const empty     = document.getElementById('home-empty-msg');
+  const folder    = document.getElementById('home-archive-folder');
+  const archGrid  = document.getElementById('home-archive-grid');
+  const archBadge = document.getElementById('home-archive-badge');
+
+  const actifs   = state.films.filter(f => f.couleur !== 'archived');
+  const archives = state.films.filter(f => f.couleur === 'archived');
+
+  empty.classList.toggle('hidden', actifs.length > 0 || archives.length > 0);
+  folder.style.display = archives.length ? '' : 'none';
+  archBadge.textContent = archives.length;
+
+  function cardHTML(f, isArchived) {
+    const dot = DOT_COLORS[f.couleur || ''] || '#555';
+    const top = CARD_TOPS[f.couleur  || ''] || '#333';
+    const nbP = state.ponctuels.filter(p => p.filmId === f.id).length;
+    const nbD = state.decors.filter(d => d.filmId === f.id).length;
+    const archBtn = isArchived
+      ? `<button class="hfc-archive" title="Désarchiver" onclick="event.stopPropagation(); toggleArchiveFilm('${f.id}')">↩</button>`
+      : `<button class="hfc-archive" title="Archiver"    onclick="event.stopPropagation(); toggleArchiveFilm('${f.id}')">📁</button>`;
+    return `
+      <div class="home-film-card" style="border-top-color:${isArchived ? '#333' : top};${isArchived ? 'opacity:.7;' : ''}" onclick="openFilm('${f.id}')">
+        <button class="hfc-delete" onclick="event.stopPropagation(); confirmDeleteFilm('${f.id}')" title="Supprimer">✕</button>
+        <button class="hfc-edit"   onclick="event.stopPropagation(); editFilm('${f.id}', true)"   title="Modifier">✎</button>
+        ${archBtn}
+        <div class="hfc-title">
+          <span class="hfc-dot" style="background:${isArchived ? '#444' : dot};"></span>${esc(f.titre)}
+        </div>
+        <div class="hfc-meta">
+          ${f.prod ? esc(f.prod) + '<br>' : ''}
+          ${f.chef ? 'Chef elec : ' + esc(f.chef) + '<br>' : ''}
+          ${f.du ? fmtDate(f.du) + ' → ' + fmtDate(f.au) : 'Dates non définies'}
+          <br><span style="color:#444;">${nbD} décor${nbD>1?'s':''} · ${nbP} ponctuel${nbP>1?'s':''}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  grid.innerHTML = actifs.map(f => cardHTML(f, false)).join('') + `
+    <div class="home-new-card" onclick="openNewFilmFromHome()">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="1" y="1" width="16" height="16" rx="4" stroke="currentColor" stroke-width="1.5"/><path d="M9 5v8M5 9h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Nouveau film
+    </div>
+  `;
+  archGrid.innerHTML = archives.map(f => cardHTML(f, true)).join('');
+}
+
+function toggleArchive() {
+  document.getElementById('home-archive-toggle').classList.toggle('open');
+  document.getElementById('home-archive-grid').classList.toggle('open');
+}
+
+function toggleArchiveFilm(id) {
+  const f = state.films.find(f => f.id === id);
+  if (!f) return;
+  f.couleur = f.couleur === 'archived' ? '' : 'archived';
+  saveToStorage();
+  renderHome();
+}
+
+function goHome() {
+  document.getElementById('home-screen').classList.remove('hidden');
+  document.getElementById('app-screen').classList.add('hidden');
+  renderHome();
+}
+
+function editFilm(id, fromHome) {
+  const f = state.films.find(f => f.id === id);
+  if (!f) return;
+  // Ensure app screen is visible so the modal overlay renders
+  document.getElementById('home-screen').classList.add('hidden');
+  document.getElementById('app-screen').classList.remove('hidden');
+  document.getElementById('modal-film-title').textContent = 'Modifier le film';
+  document.getElementById('edit-film-id').value = f.id;
+  document.getElementById('f-titre').value = f.titre || '';
+  document.getElementById('f-prod').value = f.prod || '';
+  document.getElementById('f-chef').value = f.chef || '';
+  document.getElementById('f-du').value = f.du || '';
+  document.getElementById('f-au').value = f.au || '';
+  window._chargDates = f.charg ? f.charg.split(',').filter(Boolean) : [];
+  renderChargList();
+  document.getElementById('f-rendu').value = f.rendu || '';
+  document.getElementById('f-couleur').value = f.couleur || 'green';
+  _editFilmFromHome = !!fromHome;
+  document.getElementById('modal-film').classList.add('open');
+}
+
+function editCurrentFilm() {
+  editFilm(state.currentFilm);
+}
+
+let _editFilmFromHome = false;
+
+function confirmDeleteFilm(id) {
+  const f = state.films.find(f => f.id === id);
+  if (!f) return;
+  const nbP = state.ponctuels.filter(p => p.filmId === id).length;
+  const nbD = state.decors.filter(d => d.filmId === id).length;
+  const detail = (nbP + nbD) > 0
+    ? `\n${nbD} décor${nbD>1?'s':''} et ${nbP} ponctuel${nbP>1?'s':''} seront supprimés.`
+    : '';
+  if (confirm(`Supprimer « ${f.titre} » ?${detail}\n\nCette action est irréversible.`)) {
+    deleteFilm(id);
+  }
+}
+
+function deleteFilm(id) {
+  state.films     = state.films.filter(f => f.id !== id);
+  state.ponctuels = state.ponctuels.filter(p => p.filmId !== id);
+  state.decors    = state.decors.filter(d => d.filmId !== id);
+  saveToStorage();
+  renderHome();
+  showToast('Film supprimé');
+}
+
+function openFilm(id) {
+  state.currentFilm = id;
+  document.getElementById('home-screen').classList.add('hidden');
+  document.getElementById('app-screen').classList.remove('hidden');
+  renderSidebar();
+  renderAll();
+  setView('liste');
+}
+
+function openNewFilmFromHome() {
+  // Show app, open film modal, on save → go back to home
+  document.getElementById('home-screen').classList.add('hidden');
+  document.getElementById('app-screen').classList.remove('hidden');
+  renderSidebar();
+  renderAll();
+  _newFilmFromHome = true;
+  openModal('film');
+}
+
+let _newFilmFromHome = false;
+
+renderHome();
+goHome();
+
+/* ── Adresse autocomplete (Nominatim) ── */
+let _aTimer = null, _aResults = [], _aIdx = -1;
+
+function adresseInput(val) {
+  clearTimeout(_aTimer);
+  const drop = document.getElementById('adresse-drop');
+  if (!val || val.length < 3) { drop.style.display = 'none'; return; }
+  _aTimer = setTimeout(async () => {
+    try {
+      const r = await fetch(
+        'https://nominatim.openstreetmap.org/search?format=json&limit=6&q=' + encodeURIComponent(val),
+        { headers: { 'Accept-Language': 'fr' } }
+      );
+      _aResults = await r.json();
+      _aIdx = -1;
+      if (!_aResults.length) { drop.style.display = 'none'; return; }
+      drop.innerHTML = _aResults.map((x, i) => {
+        const parts = x.display_name.split(',');
+        return '<div onmousedown="adresseSelect(' + i + ')" onmouseover="adresseHL(' + i + ')" '
+          + 'style="padding:9px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #f5f3f0;line-height:1.35;">'
+          + '<span style="font-weight:600;">' + esc(parts[0]) + '</span>'
+          + '<br><span style="font-size:11px;color:#aaa;">' + esc(parts.slice(1).join(',').trim()) + '</span>'
+          + '</div>';
+      }).join('');
+      drop.style.display = 'block';
+    } catch(e) { drop.style.display = 'none'; }
+  }, 380);
+}
+
+function adresseHL(i) {
+  _aIdx = i;
+  document.querySelectorAll('#adresse-drop > div').forEach((el, j) => {
+    el.style.background = j === i ? '#f0ede8' : '';
+  });
+}
+
+function adresseSelect(i) {
+  document.getElementById('d-adresse').value = _aResults[i].display_name;
+  document.getElementById('adresse-drop').style.display = 'none';
+}
+
+function adresseHide() {
+  setTimeout(() => { document.getElementById('adresse-drop').style.display = 'none'; }, 160);
+}
+
+function adresseKey(e) {
+  const items = document.querySelectorAll('#adresse-drop > div');
+  if (!items.length) return;
+  if (e.key === 'ArrowDown') { e.preventDefault(); adresseHL(Math.min(_aIdx + 1, items.length - 1)); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); adresseHL(Math.max(_aIdx - 1, 0)); }
+  else if (e.key === 'Enter' && _aIdx >= 0) { e.preventDefault(); adresseSelect(_aIdx); }
+  else if (e.key === 'Escape') { document.getElementById('adresse-drop').style.display = 'none'; }
+}
+
+/* ── Quantité dropdowns (1-500) ── */
+(function initQtSelects() {
+  const opts = Array.from({length: 500}, (_, i) => `<option value="${i+1}">${i+1}</option>`).join('');
+  ['p-qt','l-qt','d-jours'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.innerHTML = opts; el.value = '1'; }
+  });
+})();
+
+/* ── PWA : Service Worker ── */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('[SW] enregistré :', reg.scope))
+      .catch(err => console.warn('[SW] échec :', err));
+  });
+}
+</script>
+</body>
+</html>
